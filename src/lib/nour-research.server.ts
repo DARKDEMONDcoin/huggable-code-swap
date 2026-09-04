@@ -165,18 +165,33 @@ export async function freeChat(
   const keys = await providerKeys();
   const apiKey = keys.openrouter || keyHint;
 
+  /** ضغط الطلبات المتوازية يرجع 429/503 مؤقتاً — نعيد المحاولة بتأخير متصاعد
+   *  قبل الانتقال لمزوّد آخر، حتى لا يرى المستخدم فشلاً بلا سبب. */
+  const transient = (m: string) =>
+    m.includes("429") || m.includes("503") || m.includes("502") || m.includes("overloaded") ||
+    m.includes("UNAVAILABLE") || m.includes("timed out") || m.includes("aborted");
+
+  async function withRetry(fn: () => Promise<string>, tries = 4): Promise<string> {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = (error as Error).message;
+        if (error instanceof DailyFreeLimitError) throw error;
+        if (attempt >= tries - 1 || !transient(lastError)) throw error;
+        await new Promise((r) => setTimeout(r, 1200 * 2 ** attempt + Math.random() * 900));
+      }
+    }
+  }
+
   if (keys.lovable) {
-    // ضغط الطلبات المتوازية يرجع 429 مؤقتاً — نعيد المحاولة بتأخير متصاعد
-    // قبل الانتقال لمزوّد آخر، حتى لا يرى المستخدم فشلاً بلا سبب.
     for (const model of LOVABLE_MODELS) {
-      for (let attempt = 0; attempt < 4; attempt++) {
-        try {
-          return await callOpenAICompatible(LOVABLE, keys.lovable, model, messages, options);
-        } catch (error) {
-          lastError = (error as Error).message;
-          if (!lastError.includes("429")) break;
-          await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt + Math.random() * 800));
-        }
+      try {
+        return await withRetry(() =>
+          callOpenAICompatible(LOVABLE, keys.lovable!, model, messages, options),
+        );
+      } catch {
+        /* المزوّد التالي */
       }
     }
   }
@@ -185,14 +200,17 @@ export async function freeChat(
   if (geminiKey) {
     for (const model of GEMINI_MODELS) {
       try {
-        return await callOpenAICompatible(GEMINI, geminiKey, model, messages, options);
-      } catch (error) {
-        lastError = (error as Error).message;
+        return await withRetry(() =>
+          callOpenAICompatible(GEMINI, geminiKey, model, messages, options),
+        );
+      } catch {
+        /* المزوّد التالي */
       }
     }
   }
 
   if (!apiKey) throw new Error(`تعذّر توليد الرد (${lastError || "لا يوجد مزوّد مهيأ"}).`);
+
 
 
   const pool = FREE_MODELS.filter((m) => !unavailable.has(m)).slice(
