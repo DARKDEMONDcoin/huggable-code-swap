@@ -12,6 +12,8 @@ import {
   Plug,
   Settings,
   Send,
+  Plane,
+
   Bell,
   Menu,
   X,
