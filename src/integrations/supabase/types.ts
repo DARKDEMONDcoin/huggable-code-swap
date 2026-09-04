@@ -383,6 +383,77 @@ export type Database = {
         }
         Relationships: []
       }
+      social_autopilot: {
+        Row: {
+          active: boolean
+          brief: string
+          created_at: string
+          dialect: string
+          employee_id: string
+          hours: number[]
+          id: string
+          last_run_at: string | null
+          last_status: string | null
+          locked_at: string | null
+          mode: string
+          next_run_at: string
+          paused_reason: string | null
+          posts_per_day: number
+          providers: string[]
+          updated_at: string
+          with_image: boolean
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          brief?: string
+          created_at?: string
+          dialect?: string
+          employee_id?: string
+          hours?: number[]
+          id?: string
+          last_run_at?: string | null
+          last_status?: string | null
+          locked_at?: string | null
+          mode?: string
+          next_run_at?: string
+          paused_reason?: string | null
+          posts_per_day?: number
+          providers?: string[]
+          updated_at?: string
+          with_image?: boolean
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          brief?: string
+          created_at?: string
+          dialect?: string
+          employee_id?: string
+          hours?: number[]
+          id?: string
+          last_run_at?: string | null
+          last_status?: string | null
+          locked_at?: string | null
+          mode?: string
+          next_run_at?: string
+          paused_reason?: string | null
+          posts_per_day?: number
+          providers?: string[]
+          updated_at?: string
+          with_image?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_autopilot_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_posts: {
         Row: {
           attempts: number
