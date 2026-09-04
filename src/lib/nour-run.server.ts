@@ -419,7 +419,7 @@ export async function executeSkill(
 
   // إزالة المجاملات الافتتاحية («أهلاً بك… بصفتي…») حتى يبدأ المخرج بالمحتوى مباشرة.
   // لو كان المخرج كله مجاملة فلا نُفرغه — نُعيد الأصل بدل تسليم صفحة فارغة.
-  output = stripPreamble(output) || output;
+  output = sanitizeOutput(stripPreamble(output) || output);
 
 
   // صورة رئيسية مجانية لكل مخرج تحريري (مقال/صفحة/حزمة نشر) — مثل Penny وأدق منها:
