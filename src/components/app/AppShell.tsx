@@ -26,6 +26,8 @@ const nav = [
   { to: "/app/chat", label: "المحادثات", icon: MessagesSquare },
   { to: "/app/approvals", label: "الموافقات", icon: CheckCheck },
   { to: "/app/queue", label: "طابور النشر", icon: Send },
+  { to: "/app/autopilot", label: "الطيار الآلي", icon: Plane },
+
   { to: "/app/tasks", label: "المهام", icon: ListChecks },
   { to: "/app/automations", label: "الجدولة التلقائية", icon: CalendarClock },
   { to: "/app/rankings", label: "تتبّع الترتيب", icon: LineChart },
