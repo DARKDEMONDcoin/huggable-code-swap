@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Check, X, PartyPopper, Loader2 } from "lucide-react";
 
 import { AppShell } from "@/components/app/AppShell";
+import { PublishPanel } from "@/components/app/PublishPanel";
 import { AppIcon, appLabel } from "@/components/site/AppIcon";
 import { getMember } from "@/data/team";
 import { useTasks, useUpdateTask, useWorkspace } from "@/lib/data";
@@ -104,18 +105,28 @@ function ApprovalsPage() {
                   {a.output ?? a.detail}
                 </p>
 
+                {workspace?.id ? (
+                  <PublishPanel
+                    workspaceId={workspace.id}
+                    employeeId={a.employee_id}
+                    taskId={a.id}
+                    channel={a.channel}
+                    body={a.output ?? a.detail ?? ""}
+                  />
+                ) : null}
+
                 <div className="mt-5 flex flex-wrap gap-2">
                   <button
                     onClick={() => void act(a.id, "done")}
                     disabled={busyId === a.id}
-                    className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-60"
+                    className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-bold transition-colors hover:bg-secondary disabled:opacity-60"
                   >
                     {busyId === a.id ? (
                       <Loader2 className="size-4 animate-spin" />
                     ) : (
                       <Check className="size-4" />
                     )}
-                    اعتماد ونشر
+                    اعتماد بدون نشر
                   </button>
                   <button
                     onClick={() => void act(a.id, "rejected")}

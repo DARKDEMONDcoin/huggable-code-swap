@@ -383,6 +383,78 @@ export type Database = {
         }
         Relationships: []
       }
+      social_posts: {
+        Row: {
+          attempts: number
+          body: string
+          created_at: string
+          employee_id: string
+          id: string
+          image_url: string | null
+          last_error: string | null
+          locked_at: string | null
+          provider: string
+          published_at: string | null
+          remote_ref: string | null
+          scheduled_at: string
+          status: string
+          task_id: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          body: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          image_url?: string | null
+          last_error?: string | null
+          locked_at?: string | null
+          provider: string
+          published_at?: string | null
+          remote_ref?: string | null
+          scheduled_at?: string
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          body?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          image_url?: string | null
+          last_error?: string | null
+          locked_at?: string | null
+          provider?: string
+          published_at?: string | null
+          remote_ref?: string | null
+          scheduled_at?: string
+          status?: string
+          task_id?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_posts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           channel: string
