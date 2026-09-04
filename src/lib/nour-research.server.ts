@@ -235,7 +235,8 @@ export async function freeChat(
 
   for (const model of pool.slice(options.race === false ? 0 : 2)) {
     try {
-      return await callModel(apiKey, model, messages, options);
+      return await withRetry(() => callModel(apiKey, model, messages, options), 3);
+
     } catch (error) {
       // حد يومي أو مفتاح خاطئ: التوقف فوراً بدل استنزاف الوقت في نماذج ستفشل بنفس السبب.
       if (error instanceof DailyFreeLimitError) throw error;
