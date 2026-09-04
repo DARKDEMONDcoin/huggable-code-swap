@@ -89,13 +89,28 @@ async function publishMeta(
   if (!page) throw new Error("تعذّر تحديد الصفحة المرتبطة بحسابك على ميتا.");
 
   if (provider === "facebook") {
-    const query = new URLSearchParams({ message: text, access_token: page.token });
-    if (imageUrl) query.set("link", imageUrl);
+    // مع صورة: نرفعها كصورة حقيقية على /photos (لا كمعاينة رابط في /feed).
+    if (imageUrl) {
+      return proxyRequest<unknown>(config, {
+        workspaceId,
+        accountId,
+        method: "POST",
+        url: `${GRAPH}/${page.id}/photos?${new URLSearchParams({
+          url: imageUrl,
+          caption: text,
+          published: "true",
+          access_token: page.token,
+        }).toString()}`,
+      });
+    }
     return proxyRequest<unknown>(config, {
       workspaceId,
       accountId,
       method: "POST",
-      url: `${GRAPH}/${page.id}/feed?${query.toString()}`,
+      url: `${GRAPH}/${page.id}/feed?${new URLSearchParams({
+        message: text,
+        access_token: page.token,
+      }).toString()}`,
     });
   }
 
