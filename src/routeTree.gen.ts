@@ -40,6 +40,7 @@ import { Route as EmployeesIdRouteImport } from './routes/employees.$id'
 import { Route as ApiPublicNourAutomationsRouteImport } from './routes/api/public/nour-automations'
 import { Route as ApiPublicNourWeeklyRouteImport } from './routes/api/public/nour-weekly'
 import { Route as ApiPublicPipedreamWebhookRouteImport } from './routes/api/public/pipedream-webhook'
+import { Route as ApiPublicSocialQueueRouteImport } from './routes/api/public/social-queue'
 import { Route as AppChatIndexRouteImport } from './routes/app.chat.index'
 import { Route as AppChatIdRouteImport } from './routes/app.chat.$id'
 
@@ -200,6 +201,11 @@ const ApiPublicPipedreamWebhookRoute =
     path: '/api/public/pipedream-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSocialQueueRoute = ApiPublicSocialQueueRouteImport.update({
+  id: '/api/public/social-queue',
+  path: '/api/public/social-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppChatIndexRoute = AppChatIndexRouteImport.update({
   id: '/chat/',
   path: '/chat/',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/api/public/nour-automations': typeof ApiPublicNourAutomationsRoute
   '/api/public/nour-weekly': typeof ApiPublicNourWeeklyRoute
   '/api/public/pipedream-webhook': typeof ApiPublicPipedreamWebhookRoute
+  '/api/public/social-queue': typeof ApiPublicSocialQueueRoute
   '/app/chat/$id': typeof AppChatIdRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
@@ -277,6 +284,7 @@ export interface FileRoutesByTo {
   '/api/public/nour-automations': typeof ApiPublicNourAutomationsRoute
   '/api/public/nour-weekly': typeof ApiPublicNourWeeklyRoute
   '/api/public/pipedream-webhook': typeof ApiPublicPipedreamWebhookRoute
+  '/api/public/social-queue': typeof ApiPublicSocialQueueRoute
   '/app/chat/$id': typeof AppChatIdRoute
   '/app/chat': typeof AppChatIndexRoute
 }
@@ -313,6 +321,7 @@ export interface FileRoutesById {
   '/api/public/nour-automations': typeof ApiPublicNourAutomationsRoute
   '/api/public/nour-weekly': typeof ApiPublicNourWeeklyRoute
   '/api/public/pipedream-webhook': typeof ApiPublicPipedreamWebhookRoute
+  '/api/public/social-queue': typeof ApiPublicSocialQueueRoute
   '/app/chat/$id': typeof AppChatIdRoute
   '/app/chat/': typeof AppChatIndexRoute
 }
@@ -350,6 +359,7 @@ export interface FileRouteTypes {
     | '/api/public/nour-automations'
     | '/api/public/nour-weekly'
     | '/api/public/pipedream-webhook'
+    | '/api/public/social-queue'
     | '/app/chat/$id'
     | '/app/chat/'
   fileRoutesByTo: FileRoutesByTo
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/api/public/nour-automations'
     | '/api/public/nour-weekly'
     | '/api/public/pipedream-webhook'
+    | '/api/public/social-queue'
     | '/app/chat/$id'
     | '/app/chat'
   id:
@@ -419,6 +430,7 @@ export interface FileRouteTypes {
     | '/api/public/nour-automations'
     | '/api/public/nour-weekly'
     | '/api/public/pipedream-webhook'
+    | '/api/public/social-queue'
     | '/app/chat/$id'
     | '/app/chat/'
   fileRoutesById: FileRoutesById
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   ApiPublicNourAutomationsRoute: typeof ApiPublicNourAutomationsRoute
   ApiPublicNourWeeklyRoute: typeof ApiPublicNourWeeklyRoute
   ApiPublicPipedreamWebhookRoute: typeof ApiPublicPipedreamWebhookRoute
+  ApiPublicSocialQueueRoute: typeof ApiPublicSocialQueueRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -667,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPipedreamWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/social-queue': {
+      id: '/api/public/social-queue'
+      path: '/api/public/social-queue'
+      fullPath: '/api/public/social-queue'
+      preLoaderRoute: typeof ApiPublicSocialQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/chat/': {
       id: '/app/chat/'
       path: '/chat'
@@ -737,6 +757,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicNourAutomationsRoute: ApiPublicNourAutomationsRoute,
   ApiPublicNourWeeklyRoute: ApiPublicNourWeeklyRoute,
   ApiPublicPipedreamWebhookRoute: ApiPublicPipedreamWebhookRoute,
+  ApiPublicSocialQueueRoute: ApiPublicSocialQueueRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
