@@ -159,11 +159,21 @@ export async function freeChat(
   messages: { role: string; content: string }[],
   options: ChatOptions = {},
 ): Promise<string> {
+  const { limitLlm } = await import("./limiter.server");
+  return limitLlm(() => freeChatInner(keyHint, messages, options));
+}
+
+async function freeChatInner(
+  keyHint: string,
+  messages: { role: string; content: string }[],
+  options: ChatOptions = {},
+): Promise<string> {
   let lastError = "";
 
   const { providerKeys } = await import("./provider-keys.server");
   const keys = await providerKeys();
   const apiKey = keys.openrouter || keyHint;
+
 
   /** ضغط الطلبات المتوازية يرجع 429/503 مؤقتاً — نعيد المحاولة بتأخير متصاعد
    *  قبل الانتقال لمزوّد آخر، حتى لا يرى المستخدم فشلاً بلا سبب. */
