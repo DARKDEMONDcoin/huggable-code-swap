@@ -206,6 +206,48 @@ export function stripPreamble(text: string): string {
   return lines.join("\n").trim();
 }
 
+/**
+ * تنظيف المخرج من انحرافات النموذج التوليدية.
+ *
+ * النماذج المجانية تدخل أحياناً في حلقة تكرار: سطر فاصل من مئات الشرطات، أو نفس
+ * الفقرة معادة عشرات المرات، فيخرج نص ٤٠ ألف حرف معظمه ضجيج. هذا يقص التكرار
+ * ويحافظ على المحتوى الحقيقي.
+ */
+export function sanitizeOutput(text: string): string {
+  let out = text
+    // فواصل ماركداون الطويلة → فاصل قياسي
+    .replace(/^[ \t]*([-–—_=*·.])\1{5,}[ \t]*$/gm, "---")
+    // تكرار حرف واحد داخل السطر (شرطات، نقاط، رموز) → ثلاثة
+    .replace(/([-–—_=*·.•])\1{9,}/g, "$1$1$1")
+    // أكثر من سطرين فارغين متتاليين
+    .replace(/\n{4,}/g, "\n\n\n");
+
+  // إزالة الأسطر المكررة حرفياً بشكل متتالٍ (حلقة تكرار الفقرات)
+  const lines = out.split("\n");
+  const kept: string[] = [];
+  let repeats = 0;
+  for (const line of lines) {
+    const prev = kept[kept.length - 1];
+    if (prev !== undefined && line.trim().length > 12 && line === prev) {
+      repeats++;
+      if (repeats >= 1) continue;
+    } else {
+      repeats = 0;
+    }
+    kept.push(line);
+  }
+  out = kept.join("\n").trim();
+
+  // سقف أمان: لا مخرج يتجاوز ٢٥ ألف حرف؛ نقص عند آخر فاصل سطر منطقي
+  if (out.length > 25_000) {
+    const cut = out.lastIndexOf("\n", 25_000);
+    out = out.slice(0, cut > 20_000 ? cut : 25_000).trim();
+  }
+  return out;
+}
+
+
+
 
 export type SkillRun = {
   output: string;
