@@ -37,22 +37,28 @@ export async function generateImageBytes(
   prompt: string,
   opts: ImageOptions = {},
 ): Promise<{ bytes: Uint8Array; contentType: string; url: string } | null> {
-  const url = imageUrl(prompt, opts);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 90_000);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`pollinations ${res.status}`);
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.byteLength < 2000) throw new Error("صورة فارغة");
-    return { bytes: buf, contentType: res.headers.get("content-type") ?? "image/jpeg", url };
-  } catch (error) {
-    console.error("[nour] pollinations failed:", error);
-    return geminiImage(prompt);
-  } finally {
-    clearTimeout(timer);
+  // المزوّد المجاني يرفض أحياناً تحت الضغط المتوازي — نعيد المحاولة بتأخير متصاعد
+  // قبل السقوط إلى Gemini، فلا يخرج المنشور بلا صورة بسبب ازدحام لحظي.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const url = imageUrl(prompt, opts.seed !== undefined ? opts : { ...opts, seed: attempt });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 90_000);
+    try {
+      const res = await fetch(url, { signal: controller.signal });
+      if (!res.ok) throw new Error(`pollinations ${res.status}`);
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.byteLength < 2000) throw new Error("صورة فارغة");
+      return { bytes: buf, contentType: res.headers.get("content-type") ?? "image/jpeg", url };
+    } catch (error) {
+      console.error(`[nour] pollinations attempt ${attempt + 1} failed:`, error);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500 * 2 ** attempt + Math.random() * 700));
+    } finally {
+      clearTimeout(timer);
+    }
   }
+  return geminiImage(prompt);
 }
+
 
 /** احتياطي: توليد الصورة عبر Gemini image بمفتاح Google AI Studio المخزَّن في Supabase. */
 async function geminiImage(
