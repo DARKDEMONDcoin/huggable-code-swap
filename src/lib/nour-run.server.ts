@@ -280,6 +280,37 @@ export async function executeSkill(
     params.workspaceId,
   );
 
+  // سِراج: أدلة سوشيال حيّة (اقتراحات البحث + نتائج لحظية) قبل أي حديث عن ترند
+  // أو منافسين أو هاشتاقات — حتى لا تخرج أرقام أو أسماء من خيال النموذج.
+  if (params.employeeId === "sonny") {
+    try {
+      const { socialEvidence, SOCIAL_RESEARCH_SKILLS } = await import("./social-research.server");
+      if (SOCIAL_RESEARCH_SKILLS.has(skill.id)) {
+        const topic =
+          values["niche"] ||
+          values["topic"] ||
+          values["product"] ||
+          values["business"] ||
+          values["handle"] ||
+          workspace.industry;
+        const social = await socialEvidence(topic, {
+          city: values["city"],
+          platform: values["platform"],
+          rivals: values["rivals"] || values["competitors"],
+        });
+        if (social.block) {
+          research.block = research.block
+            ? `${research.block}\n\n${social.block}`
+            : social.block;
+          research.used.push(...social.used);
+        }
+      }
+    } catch (error) {
+      console.error("[siraj] social evidence failed:", error);
+    }
+  }
+
+
   // سياق حيّ من حسابات العلامة المربوطة (بريد، تقويم، CRM…) عبر Pipedream.
   let live = { block: "", used: [] as string[] };
   try {
