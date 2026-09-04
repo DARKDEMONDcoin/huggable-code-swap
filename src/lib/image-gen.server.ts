@@ -37,22 +37,32 @@ export async function generateImageBytes(
   prompt: string,
   opts: ImageOptions = {},
 ): Promise<{ bytes: Uint8Array; contentType: string; url: string } | null> {
-  const url = imageUrl(prompt, opts);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 90_000);
-  try {
-    const res = await fetch(url, { signal: controller.signal });
-    if (!res.ok) throw new Error(`pollinations ${res.status}`);
-    const buf = new Uint8Array(await res.arrayBuffer());
-    if (buf.byteLength < 2000) throw new Error("صورة فارغة");
-    return { bytes: buf, contentType: res.headers.get("content-type") ?? "image/jpeg", url };
-  } catch (error) {
-    console.error("[nour] pollinations failed:", error);
+  const { limitImage } = await import("./limiter.server");
+  // المزوّد المجاني يرفض تحت الضغط المتوازي — ننظّم التزامن ثم نعيد المحاولة
+  // بتأخير متصاعد قبل السقوط إلى Gemini، فلا يخرج المنشور بلا صورة.
+  return limitImage(async () => {
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const url = imageUrl(prompt, opts.seed !== undefined ? opts : { ...opts, seed: attempt });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 90_000);
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`pollinations ${res.status}`);
+        const buf = new Uint8Array(await res.arrayBuffer());
+        if (buf.byteLength < 2000) throw new Error("صورة فارغة");
+        return { bytes: buf, contentType: res.headers.get("content-type") ?? "image/jpeg", url };
+      } catch (error) {
+        console.error(`[nour] pollinations attempt ${attempt + 1} failed:`, error);
+        if (attempt < 3) await new Promise((r) => setTimeout(r, 2000 * 2 ** attempt + Math.random() * 900));
+      } finally {
+        clearTimeout(timer);
+      }
+    }
     return geminiImage(prompt);
-  } finally {
-    clearTimeout(timer);
-  }
+  });
 }
+
+
 
 /** احتياطي: توليد الصورة عبر Gemini image بمفتاح Google AI Studio المخزَّن في Supabase. */
 async function geminiImage(
