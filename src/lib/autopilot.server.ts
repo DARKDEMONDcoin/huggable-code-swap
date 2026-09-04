@@ -1,0 +1,258 @@
+/**
+ * نواة «الطيار الآلي» لسِراج: يولّد منشوراً في كل موعد محدّد، يرفق له صورة،
+ * ثم إمّا يضعه في طابور النشر ليخرج تلقائياً، أو يتركه بانتظار اعتمادك.
+ *
+ * قواعد التشغيل الخلفي: سقف صريح لكل تشغيلة، حجز يمنع التشغيل المزدوج،
+ * تقدّم محفوظ في قاعدة البيانات، وقاطع دائرة يوقف الطيار عند رفض مزوّد الذكاء.
+ */
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import type { Database } from "@/integrations/supabase/types";
+
+type Admin = SupabaseClient<Database>;
+export type AutopilotRow = Database["public"]["Tables"]["social_autopilot"]["Row"];
+
+/** أقصى عدد مساحات عمل في التشغيلة الواحدة. */
+const BATCH = 5;
+/** مدة الحجز: صف محجوز أقدم من هذا يُعتبر عالقاً ويُعاد التقاطه. */
+const LOCK_MS = 15 * 60 * 1000;
+/** أقصى عدد منصات في المنشور الواحد — سقف يمنع أي انفجار في عدد الطلبات. */
+const MAX_PROVIDERS = 4;
+
+/** المنصات التي يدعمها النشر المباشر اليوم. */
+export const AUTOPILOT_PROVIDERS = ["instagram", "facebook", "linkedin", "x"] as const;
+
+/** زوايا محتوى تتناوب يوماً بعد يوم حتى لا يتكرر المنشور نفسه. */
+const ANGLES = [
+  "فائدة عملية سريعة يطبّقها المتابع اليوم",
+  "خلف الكواليس وقصة إنسانية عن العلامة",
+  "خطأ شائع يقع فيه العملاء وكيف يتجنّبونه",
+  "تجربة عميل أو نتيجة ملموسة",
+  "سؤال يفتح نقاشاً مع المتابعين",
+  "عرض أو دعوة فعل واضحة بلا مبالغة",
+  "مقارنة بسيطة تساعد على قرار الشراء",
+] as const;
+
+export type AutopilotReport = {
+  workspaceId: string;
+  status: "generated" | "skipped" | "paused" | "failed";
+  created: number;
+  note?: string;
+};
+
+/** الموعد التالي: أقرب ساعة قادمة من الساعات المختارة (بتوقيت UTC). */
+export function nextSlot(hours: number[], from: Date = new Date()): Date {
+  const list = [...new Set(hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23))].sort(
+    (a, b) => a - b,
+  );
+  const safe = list.length ? list : [9];
+  const next = new Date(from);
+  next.setUTCMinutes(0, 0, 0);
+  for (const hour of safe) {
+    const candidate = new Date(next);
+    candidate.setUTCHours(hour);
+    if (candidate > from) return candidate;
+  }
+  const first = new Date(next);
+  first.setUTCDate(first.getUTCDate() + 1);
+  first.setUTCHours(safe[0]!);
+  return first;
+}
+
+/** يستخرج نص المنشور النهائي والهاشتاقات ووصف الصورة من مخرج القدرة. */
+export function extractPost(output: string): { caption: string; imagePrompt: string | null } {
+  const clean = (t: string) =>
+    t
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+      .replace(/^#{1,6}\s*/gm, "")
+      .replace(/\*\*/g, "")
+      .replace(/^\s*\d\)\s*/gm, "")
+      .trim();
+
+  const section = (label: RegExp): string | null => {
+    const lines = output.split("\n");
+    const start = lines.findIndex((l) => label.test(l));
+    if (start === -1) return null;
+    const body: string[] = [];
+    for (let i = start + 1; i < lines.length; i += 1) {
+      const line = lines[i]!;
+      if (/^\s*(\d\)|#{1,6}\s|\*\*\d)/.test(line) && body.join("").trim()) break;
+      body.push(line);
+    }
+    return clean(body.join("\n")) || null;
+  };
+
+  const main = section(/نص المنشور/);
+  const tags = section(/هاشتاق/);
+  const imagePrompt = section(/وصف الصورة/);
+
+  const hashtags = tags
+    ? [...new Set(tags.match(/#[\p{L}\p{N}_]+/gu) ?? [])].slice(0, 15).join(" ")
+    : "";
+
+  const caption = [main ?? clean(output).slice(0, 1800), hashtags].filter(Boolean).join("\n\n");
+  return { caption: caption.slice(0, 2200), imagePrompt: imagePrompt?.slice(0, 400) ?? null };
+}
+
+/** رفض دائم من مزوّد الذكاء (رصيد/سياسة) — يوقف الطيار بدل تكرار المحاولة. */
+function isBlocked(message: string): boolean {
+  return /\b(402|403)\b|رصيد|credit|payment required|forbidden/i.test(message);
+}
+
+/** تشغيلة واحدة لمساحة عمل: توليد منشور ثم جدولته أو رفعه للمراجعة. */
+export async function runAutopilotRow(
+  admin: Admin,
+  row: AutopilotRow,
+  now: Date = new Date(),
+): Promise<AutopilotReport> {
+  const hours = (row.hours ?? []).map(Number);
+  const finish = async (patch: Record<string, unknown>) => {
+    await admin
+      .from("social_autopilot")
+      .update({
+        last_run_at: now.toISOString(),
+        next_run_at: nextSlot(hours, now).toISOString(),
+        locked_at: null,
+        ...patch,
+      })
+      .eq("id", row.id);
+  };
+
+  // منصات مطلوبة ومربوطة فعلاً فقط — لا نولّد محتوى لن يجد وجهة.
+  const wanted = (row.providers ?? []).slice(0, MAX_PROVIDERS);
+  if (!wanted.length) {
+    await finish({ last_status: "لم تختر أي منصة بعد." });
+    return { workspaceId: row.workspace_id, status: "skipped", created: 0, note: "لا منصات مختارة" };
+  }
+
+  const { data: accounts } = await admin
+    .from("pipedream_accounts")
+    .select("provider")
+    .eq("workspace_id", row.workspace_id)
+    .eq("status", "connected");
+  const connected = new Set((accounts ?? []).map((a) => a.provider));
+  const providers = wanted.filter((p) => connected.has(p));
+  if (!providers.length) {
+    await finish({ last_status: "المنصات المختارة غير مربوطة — اربطها من صفحة التكاملات." });
+    return { workspaceId: row.workspace_id, status: "skipped", created: 0, note: "لا حسابات مربوطة" };
+  }
+
+  try {
+    const { data: workspace } = await admin
+      .from("workspaces")
+      .select("name, industry")
+      .eq("id", row.workspace_id)
+      .maybeSingle();
+
+    const angle = ANGLES[Math.floor(now.getTime() / 86_400_000) % ANGLES.length]!;
+    const brief = row.brief?.trim() || workspace?.industry || workspace?.name || "علامتنا";
+    const topic = `${brief} — زاوية اليوم: ${angle}`;
+
+    const { executeSkill } = await import("./nour-run.server");
+    const run = await executeSkill(admin, {
+      workspaceId: row.workspace_id,
+      employeeId: row.employee_id,
+      skillId: "social-post",
+      values: {
+        topic,
+        platform: providers[0]!,
+        dialect: row.dialect,
+      },
+      origin: "الطيار الآلي",
+    });
+
+    const { caption, imagePrompt } = extractPost(run.output);
+    if (!caption.trim()) throw new Error("لم يخرج نص منشور صالح.");
+
+    let imageUrl: string | null = null;
+    if (row.with_image) {
+      try {
+        const { ownedHeroImage, heroPrompt } = await import("./image-gen.server");
+        imageUrl = await ownedHeroImage(
+          admin as unknown as Parameters<typeof ownedHeroImage>[0],
+          row.workspace_id,
+          imagePrompt ?? heroPrompt(brief, workspace?.industry),
+        );
+      } catch (e) {
+        console.error("[autopilot] image failed:", e);
+      }
+    }
+
+    // وضع المراجعة: المهمة أُنشئت بالفعل داخل executeSkill بحالة «بانتظار الاعتماد».
+    if (row.mode !== "auto") {
+      await finish({ last_status: "جاهز بانتظار اعتمادك في صفحة الموافقات.", paused_reason: null });
+      return { workspaceId: row.workspace_id, status: "generated", created: 0, note: "بانتظار المراجعة" };
+    }
+
+    const rows = providers
+      // إنستجرام لا يقبل منشوراً بلا صورة — نتخطاه بدل فشل مؤكد وقت النشر.
+      .filter((provider) => provider !== "instagram" || Boolean(imageUrl))
+      .map((provider) => ({
+        workspace_id: row.workspace_id,
+        employee_id: row.employee_id,
+        task_id: run.taskId,
+        provider,
+        body: caption,
+        image_url: imageUrl,
+        scheduled_at: now.toISOString(),
+        status: "scheduled",
+      }));
+
+    if (!rows.length) {
+      await finish({ last_status: "تعذّر تجهيز صورة، وإنستجرام يتطلب صورة." });
+      return { workspaceId: row.workspace_id, status: "skipped", created: 0, note: "لا صورة" };
+    }
+
+    const { error } = await admin.from("social_posts").insert(rows);
+    if (error) throw new Error(error.message);
+
+    await finish({
+      last_status: `تم تجهيز ${rows.length} منشوراً للنشر التلقائي.`,
+      paused_reason: null,
+    });
+    return { workspaceId: row.workspace_id, status: "generated", created: rows.length };
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "فشل غير معروف";
+    if (isBlocked(message)) {
+      await finish({
+        active: false,
+        paused_reason: `توقف الطيار: ${message.slice(0, 200)}`,
+        last_status: "متوقف — يحتاج تدخلك.",
+      });
+      return { workspaceId: row.workspace_id, status: "paused", created: 0, note: message };
+    }
+    await finish({ last_status: `فشل: ${message.slice(0, 200)}` });
+    return { workspaceId: row.workspace_id, status: "failed", created: 0, note: message };
+  }
+}
+
+/** يلتقط دفعة محدودة من الطيارات المستحقة ويشغّلها واحداً تلو الآخر. */
+export async function runDueAutopilots(admin: Admin, now: Date = new Date()): Promise<AutopilotReport[]> {
+  const staleBefore = new Date(now.getTime() - LOCK_MS).toISOString();
+
+  const { data: due, error } = await admin
+    .from("social_autopilot")
+    .select("*")
+    .eq("active", true)
+    .lte("next_run_at", now.toISOString())
+    .or(`locked_at.is.null,locked_at.lt.${staleBefore}`)
+    .order("next_run_at", { ascending: true })
+    .limit(BATCH);
+  if (error) throw new Error(error.message);
+  if (!due?.length) return [];
+
+  const report: AutopilotReport[] = [];
+  for (const row of due) {
+    // حجز ذرّي: التحديث ينجح مرة واحدة فقط لأن الشرط يتضمن الحجز السابق.
+    const { data: claimed } = await admin
+      .from("social_autopilot")
+      .update({ locked_at: now.toISOString() })
+      .eq("id", row.id)
+      .eq("active", true)
+      .or(`locked_at.is.null,locked_at.lt.${staleBefore}`)
+      .select("id");
+    if (!claimed?.length) continue;
+    report.push(await runAutopilotRow(admin, row, now));
+  }
+  return report;
+}
