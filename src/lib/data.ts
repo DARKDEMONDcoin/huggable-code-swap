@@ -242,3 +242,40 @@ export function useUpdateProfile() {
     },
   });
 }
+
+export type SocialPost = Tables<"social_posts">;
+export type PipedreamAccount = Tables<"pipedream_accounts">;
+
+/** المنصات المربوطة فعلياً عبر Pipedream — مصدر الحقيقة لأزرار النشر. */
+export function useConnectedAccounts(workspaceId?: string) {
+  return useQuery({
+    queryKey: ["pipedream-accounts", workspaceId],
+    enabled: !!workspaceId,
+    queryFn: () =>
+      must<PipedreamAccount[]>(
+        supabase
+          .from("pipedream_accounts")
+          .select("*")
+          .eq("workspace_id", workspaceId!)
+          .eq("status", "connected"),
+      ),
+  });
+}
+
+/** طابور النشر: المجدول والمنشور والفاشل. */
+export function useSocialPosts(workspaceId?: string) {
+  return useQuery({
+    queryKey: ["social-posts", workspaceId],
+    enabled: !!workspaceId,
+    refetchInterval: 60_000,
+    queryFn: () =>
+      must<SocialPost[]>(
+        supabase
+          .from("social_posts")
+          .select("*")
+          .eq("workspace_id", workspaceId!)
+          .order("scheduled_at", { ascending: true })
+          .limit(200),
+      ),
+  });
+}
