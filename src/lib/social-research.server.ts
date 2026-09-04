@@ -31,7 +31,7 @@ function uniq(list: string[], max: number): string[] {
  */
 export async function socialEvidence(
   topic: string,
-  opts: { city?: string; platform?: string; rivals?: string; budgetMs?: number } = {},
+  opts: { city?: string | undefined; platform?: string | undefined; rivals?: string | undefined; budgetMs?: number } = {},
 ): Promise<SocialEvidence> {
   const seed = topic.trim().slice(0, 80);
   if (seed.length < 3) return EMPTY;
