@@ -3,6 +3,7 @@ import { ArrowLeft, Check, ShieldAlert } from "lucide-react";
 
 import { PageShell, CtaBand } from "@/components/site/PageShell";
 import { AppRow } from "@/components/site/AppIcon";
+import { Portrait, RegionPicker } from "@/components/site/Portrait";
 import { Reveal } from "@/components/Reveal";
 import { team } from "@/data/team";
 
@@ -89,20 +90,24 @@ function MemberPage() {
             كل الموظفين
           </Link>
           <div className="mt-6 flex flex-wrap items-center gap-5">
-            <span
-              className="grid size-20 place-items-center rounded-3xl border border-white/30 bg-white/15 text-white backdrop-blur"
-              style={{ color: "white" }}
-            >
-              <m.icon className="size-9" strokeWidth={2.1} />
+            <span className="relative block size-28 shrink-0 overflow-hidden rounded-[2rem] border border-white/30 shadow-lift ring-4 ring-white/10 md:size-32">
+              <Portrait memberId={m.id} name={m.name} className="size-full" eager />
             </span>
             <div>
               <h1 className="font-display text-4xl font-black text-white md:text-5xl">{m.name}</h1>
               <p className="mt-2 text-lg font-semibold text-white/85">
                 {m.role} — {m.title}
               </p>
+              <span className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-1.5 text-xs font-bold text-white backdrop-blur">
+                <m.icon className="size-3.5" strokeWidth={2.4} />
+                {m.tagline}
+              </span>
             </div>
           </div>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/90">{m.summary}</p>
+          <div className="mt-6">
+            <RegionPicker className="border-white/25 bg-white/10" />
+          </div>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               to="/app"
