@@ -223,11 +223,12 @@ function MemberPage() {
               params={{ id: o.id }}
               className="group rounded-3xl border border-border bg-card p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
             >
-              <span
-                className="grid size-11 place-items-center rounded-2xl"
-                style={{ background: o.tintSoft, color: o.tint }}
-              >
-                <o.icon className="size-5.5" />
+              <span className="relative block size-14 overflow-hidden rounded-2xl shadow-card">
+                <Portrait
+                  memberId={o.id}
+                  name={o.name}
+                  className="size-full transition-transform duration-500 group-hover:scale-105"
+                />
               </span>
               <h3 className="mt-4 font-display text-lg font-black">{o.name}</h3>
               <p className="text-sm text-muted-foreground">{o.role}</p>
