@@ -183,11 +183,39 @@ function needsResearch(message: string): boolean {
   return signals.some((s) => lower.includes(s));
 }
 
+/** قدرات مخرجها طويل بطبيعته (تقويم شهري، خطة ربعية، دفعة أسبوعية) — تحتاج مساحة أكبر. */
+export const LONG_SKILLS = new Set([
+  "content-calendar",
+  "quarterly-strategy",
+  "launch-campaign",
+  "weekly-batch",
+  "crisis-playbook",
+  "competitor-teardown",
+  "publish-package",
+  "seo-article",
+]);
+
+/**
+ * هل انقطع المخرج في منتصفه؟ العلامات: ينتهي داخل صف جدول غير مكتمل،
+ * أو بلا أي علامة نهاية جملة، أو بكلمة مبتورة بعد نص طويل.
+ */
+export function isTruncated(text: string): boolean {
+  const t = text.trimEnd();
+  if (t.length < 400) return false;
+  const last = t.slice(t.lastIndexOf("\n") + 1).trim();
+  // صف جدول بلا إغلاق، أو سطر لا ينتهي بعلامة ترقيم/إغلاق منطقي
+  if (last.startsWith("|") && !last.endsWith("|")) return true;
+  return !/[.!؟?:،)»"'`\]]|[\u0621-\u064A]$/.test(last) === false
+    ? false
+    : !/[.!؟?:)»"'`\]|]$/.test(last);
+}
+
 /**
  * تشذيب المقدمات والمجاملات («أهلاً بك»، «بصفتي…»، «يسعدني أن أقدم…»)
  * حتى يبدأ كل مخرج بالمحتوى القابل للاستخدام مباشرة.
  */
 export function stripPreamble(text: string): string {
+
   const lines = text.split("\n");
   const greeting =
     /^(أهلاً|أهلا|مرحباً|مرحبا|بالتأكيد|تفضل|تفضلي|حسناً|حسنا|بصفتي|يسعدني|سعيدة|إليك|اليك|فيما يلي|بناءً على طلبك|بناء على طلبك)/;
