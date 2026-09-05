@@ -13,14 +13,21 @@ type Admin = SupabaseClient<Database>;
 export type AutopilotRow = Database["public"]["Tables"]["social_autopilot"]["Row"];
 
 /** أقصى عدد مساحات عمل في التشغيلة الواحدة. */
-const BATCH = 5;
+const BATCH = 25;
 /** مدة الحجز: صف محجوز أقدم من هذا يُعتبر عالقاً ويُعاد التقاطه. */
 const LOCK_MS = 15 * 60 * 1000;
 /** أقصى عدد منصات في المنشور الواحد — سقف يمنع أي انفجار في عدد الطلبات. */
-const MAX_PROVIDERS = 4;
+const MAX_PROVIDERS = 12;
 
 /** المنصات التي يدعمها النشر المباشر اليوم. */
-export const AUTOPILOT_PROVIDERS = ["instagram", "facebook", "linkedin", "x"] as const;
+export const AUTOPILOT_PROVIDERS = [
+  "instagram",
+  "facebook",
+  "linkedin",
+  "x",
+  "pinterest",
+  "youtube",
+] as const;
 
 /** زوايا محتوى تتناوب يوماً بعد يوم حتى لا يتكرر المنشور نفسه. */
 const ANGLES = [
