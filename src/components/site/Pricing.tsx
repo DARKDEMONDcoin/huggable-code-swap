@@ -42,7 +42,7 @@ export function Pricing() {
 
         <div className="mt-12 grid items-start gap-5 md:grid-cols-3">
           {plans.map((p, i) => {
-            const price = p.monthly === 0 ? 0 : yearly ? Math.round(p.monthly * 0.8) : p.monthly;
+            const price = priceOf(p, yearly);
             return (
               <Reveal key={p.name} delay={i * 90}>
                 <article
