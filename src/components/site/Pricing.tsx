@@ -89,12 +89,13 @@ export function Pricing() {
                         p.highlight ? "text-background/70" : "text-muted-foreground",
                       )}
                     >
-                      ر.س / شهرياً
+                      {p.monthly === null ? "" : "ر.س / شهرياً"}
                     </span>
                   </div>
 
-                  <a
-                    href="#cta"
+                  <Link
+                    to={p.id === "scale" ? "/contact" : "/auth"}
+                    search={p.id === "scale" ? undefined : { mode: "signup", plan: p.id }}
                     className={cn(
                       "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
                       p.highlight
@@ -103,10 +104,11 @@ export function Pricing() {
                     )}
                   >
                     {p.cta}
-                  </a>
+                  </Link>
 
                   <ul className="mt-7 space-y-3">
-                    {p.features.map((f) => (
+                    {p.perks.map((f) => (
+
                       <li key={f} className="flex items-start gap-2.5">
                         <Check
                           className={cn(
