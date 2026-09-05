@@ -95,7 +95,7 @@ export const useCases: UseCase[] = [
       { k: "ساعات توفّرها", v: "٤٠/شهر" },
     ],
     apps: ["shopify", "salla", "instagram", "tiktok", "whatsapp", "analytics", "meta-ads", "sheets"],
-    crew: ["sonny", "dana", "sam", "amal", "adam"],
+    crew: ["sonny", "dana", "sam", "eva", "adam"],
     faq: [
       {
         q: "هل يربط مع سلة وزد وشوبيفاي؟",
@@ -167,7 +167,7 @@ export const useCases: UseCase[] = [
       { k: "تكلفة أقل من موظف", v: "٩٠٪" },
     ],
     apps: ["instagram", "tiktok", "facebook", "google-business", "whatsapp", "analytics"],
-    crew: ["sonny", "dana", "amal", "adam"],
+    crew: ["sonny", "dana", "eva", "adam"],
     faq: [
       {
         q: "هل يحتاج صوراً احترافية؟",
@@ -239,7 +239,7 @@ export const useCases: UseCase[] = [
       { k: "زمن الرد", v: "< ٣ دقائق" },
     ],
     apps: ["instagram", "whatsapp", "google-business", "search-console", "calendar", "analytics"],
-    crew: ["noor", "amal", "dana", "adam"],
+    crew: ["nour", "eva", "dana", "adam"],
     faq: [
       {
         q: "هل يقدّم استشارة طبية للمريض؟",
@@ -335,7 +335,7 @@ export const useCases: UseCase[] = [
       { k: "متابعة المترددين", v: "تلقائية" },
     ],
     apps: ["instagram", "youtube", "linkedin", "gmail", "mailchimp", "notion", "analytics"],
-    crew: ["noor", "sam", "amal", "dana", "adam"],
+    crew: ["nour", "sam", "eva", "dana", "adam"],
     faq: [
       {
         q: "هل يكتب محتوى الدورة نفسها؟",
@@ -383,7 +383,7 @@ export const useCases: UseCase[] = [
       { k: "متابعة العروض", v: "تلقائية" },
     ],
     apps: ["linkedin", "x", "gmail", "calendar", "notion", "search-console", "analytics"],
-    crew: ["sonny", "noor", "sam", "amal", "adam"],
+    crew: ["sonny", "nour", "sam", "eva", "adam"],
     faq: [
       {
         q: "هل يكتب بصوتي أنا؟",
