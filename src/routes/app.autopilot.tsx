@@ -66,7 +66,10 @@ function AutopilotPage() {
   const [providers, setProviders] = useState<string[]>([]);
   const [brief, setBrief] = useState("");
   const [dialect, setDialect] = useState<string>("خليجية");
-  const [hours, setHours] = useState<number[]>([9]);
+  const [slots, setSlots] = useState<string[]>(["09:00"]);
+  const [days, setDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [timezone, setTimezone] = useState<string>("Asia/Riyadh");
+  const [newSlot, setNewSlot] = useState("12:00");
   const [mode, setMode] = useState<"auto" | "review">("review");
   const [withImage, setWithImage] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +82,14 @@ function AutopilotPage() {
     setProviders(row.providers ?? []);
     setBrief(row.brief ?? "");
     setDialect(row.dialect ?? "خليجية");
-    setHours((row.hours ?? [9]).map(Number));
+    const saved = (row as { slots?: string[] | null }).slots ?? [];
+    setSlots(
+      saved.length
+        ? saved
+        : (row.hours ?? [9]).map((h) => `${String((Number(h) + 3) % 24).padStart(2, "0")}:00`),
+    );
+    setDays(((row as { days?: number[] | null }).days ?? [0, 1, 2, 3, 4, 5, 6]).map(Number));
+    setTimezone((row as { timezone?: string | null }).timezone ?? "Asia/Riyadh");
     setMode(row.mode === "auto" ? "auto" : "review");
     setWithImage(row.with_image);
   }, [row]);
@@ -93,8 +103,9 @@ function AutopilotPage() {
           providers,
           brief,
           dialect,
-          postsPerDay: Math.max(1, Math.min(3, hours.length)),
-          hours,
+          slots: slots.length ? slots : ["09:00"],
+          days: days.length ? days : [0, 1, 2, 3, 4, 5, 6],
+          timezone,
           mode,
           withImage,
         },
@@ -124,17 +135,15 @@ function AutopilotPage() {
 
   const connected = new Set((accounts ?? []).map((a) => a.provider));
   const toggleProvider = (p: string) =>
-    setProviders((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p].slice(0, 4)));
-  const toggleHour = (localHour: number) => {
-    const utc = toUtc(localHour);
-    setHours((list) =>
-      list.includes(utc)
-        ? list.length > 1
-          ? list.filter((h) => h !== utc)
-          : list
-        : [...list, utc].slice(0, 3).sort((a, b) => a - b),
-    );
+    setProviders((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p]));
+  const addSlot = (value: string) => {
+    if (!/^\d{1,2}:\d{2}$/.test(value)) return;
+    setSlots((list) => (list.includes(value) ? list : [...list, value].sort()));
   };
+  const removeSlot = (value: string) => setSlots((list) => list.filter((s) => s !== value));
+  const toggleDay = (d: number) =>
+    setDays((list) => (list.includes(d) ? list.filter((x) => x !== d) : [...list, d].sort()));
+
 
   const busy = save.isPending || runNow.isPending;
 
