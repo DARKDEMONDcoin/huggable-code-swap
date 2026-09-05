@@ -28,9 +28,41 @@ export const Route = createFileRoute("/")({
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "سهل",
+              alternateName: "Sahl",
+              url: "https://huggable-code-swap.lovable.app",
+              description:
+                "منصة عربية تمنح أصحاب المشاريع فريق موظفين بالذكاء الاصطناعي ينشر ويصمّم ويردّ ويبيع على مدار الساعة.",
+            },
+            {
+              "@type": "SoftwareApplication",
+              name: "سهل",
+              applicationCategory: "BusinessApplication",
+              operatingSystem: "Web",
+              inLanguage: "ar",
+              offers: {
+                "@type": "Offer",
+                price: "149",
+                priceCurrency: "SAR",
+                description: "باقة البداية — موظف رقمي واحد",
+              },
+            },
+          ],
+        }),
+      },
+    ],
   }),
   component: Index,
 });
+
 
 function Index() {
   return (

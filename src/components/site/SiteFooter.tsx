@@ -8,9 +8,19 @@ const cols: { t: string; l: { label: string; to: string }[] }[] = [
     l: [
       { label: "الموظفون", to: "/employees" },
       { label: "المزايا", to: "/features" },
+      { label: "التكاملات", to: "/integrations" },
       { label: "كيف يعمل", to: "/how-it-works" },
       { label: "الأسعار", to: "/pricing" },
-      { label: "الأسئلة الشائعة", to: "/faq" },
+    ],
+  },
+  {
+    t: "الحلول",
+    l: [
+      { label: "المتاجر الإلكترونية", to: "/use-cases/ecommerce" },
+      { label: "المطاعم والكافيهات", to: "/use-cases/restaurants" },
+      { label: "العيادات", to: "/use-cases/clinics" },
+      { label: "العقار والمقاولات", to: "/use-cases/realestate" },
+      { label: "كل القطاعات", to: "/use-cases" },
     ],
   },
   {
@@ -19,6 +29,7 @@ const cols: { t: string; l: { label: string; to: string }[] }[] = [
       { label: "من نحن", to: "/about" },
       { label: "قصص النجاح", to: "/stories" },
       { label: "المدونة", to: "/blog" },
+      { label: "الأسئلة الشائعة", to: "/faq" },
       { label: "تواصل معنا", to: "/contact" },
     ],
   },
@@ -33,12 +44,13 @@ const cols: { t: string; l: { label: string; to: string }[] }[] = [
   },
 ];
 
+
 const integrations = ["instagram", "linkedin", "x", "tiktok", "gmail", "slack", "notion", "shopify"];
 
 export function SiteFooter() {
   return (
     <footer className="border-t border-border bg-background">
-      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_repeat(4,1fr)]">
         <div>
           <Link to="/" className="flex items-center gap-2.5">
             <span
