@@ -125,7 +125,9 @@ export function extractPost(output: string): {
 
 
 /** نسخة إكس المختصرة — منطق موحّد مع لوحة النشر. */
-export { shortForX } from "./post-format";
+import { shortForX } from "./post-format";
+export { shortForX };
+
 
 
 /** رفض دائم من مزوّد الذكاء (رصيد/سياسة) — يوقف الطيار بدل تكرار المحاولة. */
