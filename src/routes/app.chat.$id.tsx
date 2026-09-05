@@ -226,7 +226,7 @@ function ChatPage() {
                       : "rounded-ss-lg border border-border bg-card shadow-sm",
                   )}
                 >
-                  {m.role === "user" ? <p dir="auto">{m.body}</p> : <Markdown body={m.body} />}
+                  {m.role === "user" ? <p dir="auto">{m.body}</p> : <Markdown body={prettyBody(m.body)} />}
                   {m.role !== "user" &&
                   id === "nour" &&
                   workspace &&
