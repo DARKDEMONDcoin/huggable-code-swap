@@ -205,9 +205,7 @@ export function isTruncated(text: string): boolean {
   const last = t.slice(t.lastIndexOf("\n") + 1).trim();
   // صف جدول بلا إغلاق، أو سطر لا ينتهي بعلامة ترقيم/إغلاق منطقي
   if (last.startsWith("|") && !last.endsWith("|")) return true;
-  return !/[.!؟?:،)»"'`\]]|[\u0621-\u064A]$/.test(last) === false
-    ? false
-    : !/[.!؟?:)»"'`\]|]$/.test(last);
+  return !/[.!؟?:)»"'`\]|]$/.test(last);
 }
 
 /**
