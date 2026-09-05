@@ -247,7 +247,10 @@ export function PublishPanel({
       </div>
 
 
-      {note ? <p className="mt-3 text-xs font-bold text-ink-soft">{note}</p> : null}
+      {note ? (
+        <p className="mt-3 whitespace-pre-line text-xs font-bold text-ink-soft">{note}</p>
+      ) : null}
+
     </div>
   );
 }
