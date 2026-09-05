@@ -1,48 +1,10 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { plans, priceOf } from "@/data/pricing";
 import { cn } from "@/lib/utils";
 
-const plans = [
-  {
-    name: "البداية",
-    monthly: 0,
-    tag: "مجاني للأبد",
-    desc: "لتجربة الفريق على مشروع واحد.",
-    features: ["موظف واحد", "منصتان للنشر", "30 مهمة شهرياً", "مراجعة يدوية قبل النشر"],
-    cta: "ابدأ الآن",
-    highlight: false,
-  },
-  {
-    name: "النمو",
-    monthly: 149,
-    tag: "الأكثر اختياراً",
-    desc: "لصاحب مشروع يريد فريقاً كاملاً.",
-    features: [
-      "6 موظفين مفعّلين",
-      "7 منصات نشر",
-      "1,500 مهمة شهرياً",
-      "توليد صور وفيديو قصير",
-      "رصيد يترحّل للشهر التالي",
-    ],
-    cta: "جرّب 14 يوم مجاناً",
-    highlight: true,
-  },
-  {
-    name: "الوكالات",
-    monthly: 399,
-    tag: "متعدد العملاء",
-    desc: "لإدارة عدة علامات تجارية.",
-    features: [
-      "علامات تجارية غير محدودة",
-      "مهام غير محدودة عملياً",
-      "صلاحيات فريق وتقارير بعلامتك",
-      "مدير حساب مخصص",
-    ],
-    cta: "تواصل معنا",
-    highlight: false,
-  },
-];
 
 export function Pricing() {
   const [yearly, setYearly] = useState(true);
