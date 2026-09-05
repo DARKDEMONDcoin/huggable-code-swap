@@ -392,6 +392,11 @@ export async function executeSkill(
       : "",
 
     "أنت تنفّذ الآن مهمة محددة وتسلّم مخرجاً نهائياً جاهزاً للاستخدام — لا أسئلة ولا مقدمات ولا اعتذارات.",
+    // النموذج يميل لفتح المخرج بقائمة «بيانات ناقصة» — وهذا يفسد التسليم.
+    // نمنعه: افترض افتراضات مهنية معقولة، واذكرها في سطر واحد في نهاية المخرج.
+    "ممنوع أن تبدأ بقسم «معلومات ناقصة» أو أن تطلب بيانات إضافية أو تعتذر عن نقصها. افترض افتراضات مهنية معقولة ونفّذ، ثم اذكرها في سطر واحد فقط تحت عنوان «افتراضات» في نهاية المخرج.",
+    "إن طُلب جدول، أكمله حتى آخر صف مطلوب ولا تتوقف في منتصفه، ولا تكتب «وهكذا» أو «باقي الأيام مشابهة».",
+    "أي وصف صورة تكتبه للمولّد: بلا أي نص أو شعار أو حروف داخل الصورة إطلاقاً.",
     actionTruthRules,
     "اكتب بالعربية الفصحى الواضحة، بصيغة Markdown منسّقة، والتزم حرفياً بالهيكل المطلوب.",
   ]
@@ -406,22 +411,46 @@ export async function executeSkill(
     body: `▸ ${skill.title}${params.origin ? ` (${params.origin})` : ""}${requestSummary ? `\n${requestSummary}` : ""}`,
   });
 
-  let output = (
-    await freeChat(
-      apiKey,
-      [
-        { role: "system", content: system },
-        { role: "user", content: prompt },
-      ],
-      { timeoutMs: 55_000, maxTokens: 3200 },
-    )
-  ).trim();
+  const long = LONG_SKILLS.has(skill.id);
+  const chat = (messages: { role: string; content: string }[]) =>
+    freeChat(apiKey, messages as Parameters<typeof freeChat>[1], {
+      timeoutMs: long ? 90_000 : 55_000,
+      maxTokens: long ? 8000 : 3600,
+    });
+
+  let output = (await chat([
+    { role: "system", content: system },
+    { role: "user", content: prompt },
+  ])).trim();
 
   if (!output) throw new Error("لم يصل مخرج من الموظف — أعد المحاولة.");
+
+  // المخرجات الطويلة (تقويم شهري، استراتيجية ربعية) تُقطع أحياناً في منتصف جدول.
+  // نطلب تكملة واحدة من نقطة القطع بدل تسليم جدول ناقص.
+  if (isTruncated(output)) {
+    try {
+      const rest = (
+        await chat([
+          { role: "system", content: system },
+          { role: "user", content: prompt },
+          { role: "assistant", content: output },
+          {
+            role: "user",
+            content:
+              "المخرج انقطع. أكمل من حيث توقفت بالضبط دون إعادة أي سطر سبق، وابدأ مباشرة بالصف/السطر التالي حتى تُنهي كل الأقسام المطلوبة.",
+          },
+        ])
+      ).trim();
+      if (rest) output = `${output}\n${rest}`;
+    } catch (error) {
+      console.error("[run] continuation failed:", error);
+    }
+  }
 
   // إزالة المجاملات الافتتاحية («أهلاً بك… بصفتي…») حتى يبدأ المخرج بالمحتوى مباشرة.
   // لو كان المخرج كله مجاملة فلا نُفرغه — نُعيد الأصل بدل تسليم صفحة فارغة.
   output = sanitizeActionClaims(sanitizeOutput(stripPreamble(output) || output));
+
 
 
   // صورة رئيسية مجانية لكل مخرج تحريري (مقال/صفحة/حزمة نشر) — مثل Penny وأدق منها:
