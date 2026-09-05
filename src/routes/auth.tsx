@@ -219,6 +219,8 @@ function AuthPage() {
   }
 
   const isSignup = mode === "signup";
+  const chosenPlan = plans.find((p) => p.id === search.plan);
+
 
   return (
     <PageShell>
