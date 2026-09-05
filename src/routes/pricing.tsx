@@ -3,6 +3,8 @@ import { Check, Minus } from "lucide-react";
 
 import { PageShell, PageHero, CtaBand } from "@/components/site/PageShell";
 import { Reveal } from "@/components/Reveal";
+import { plans, priceOf } from "@/data/pricing";
+
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
