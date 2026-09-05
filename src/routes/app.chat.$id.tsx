@@ -295,11 +295,24 @@ function ChatPage() {
               </div>
             ) : null}
 
+            {savedTask && !busy ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-jade/12 px-4 py-3 text-sm font-semibold text-jade-deep">
+                تم حفظ المخرج في «الموافقات» بانتظار اعتمادك.
+                <Link
+                  to="/app/approvals"
+                  className="rounded-full bg-jade-deep px-4 py-1.5 text-xs font-bold text-background"
+                >
+                  افتح الموافقات
+                </Link>
+              </div>
+            ) : null}
+
             {error ? (
               <p className="rounded-2xl bg-coral/12 px-4 py-3 text-sm font-semibold text-coral">
                 {error}
               </p>
             ) : null}
+
             <div ref={endRef} />
           </div>
 
