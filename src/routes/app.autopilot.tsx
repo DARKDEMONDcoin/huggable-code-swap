@@ -182,7 +182,7 @@ function AutopilotPage() {
                       weekday: "long",
                       hour: "2-digit",
                       minute: "2-digit",
-                      timeZone: "Asia/Riyadh",
+                      timeZone: timezone,
                     })}
                   </p>
                 ) : null}
