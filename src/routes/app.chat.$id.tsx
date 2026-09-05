@@ -123,9 +123,10 @@ function ChatPage() {
   const send = useMutation({
     mutationFn: (message: string) =>
       ask({ data: { workspaceId: workspace!.id, employeeId: id, message } }),
-    onSuccess: async () => {
+    onSuccess: async (res) => {
       await qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
       setPending(null);
+      setSavedTask(Boolean(res?.createdTaskId));
       void qc.invalidateQueries({ queryKey: ["messages-last", workspace?.id] });
       void qc.invalidateQueries({ queryKey: ["tasks", workspace?.id] });
     },
@@ -146,13 +147,15 @@ function ChatPage() {
           values: p.values,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      setSavedTask(Boolean(res?.taskId));
       void qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
       void qc.invalidateQueries({ queryKey: ["messages-last", workspace?.id] });
       void qc.invalidateQueries({ queryKey: ["tasks", workspace?.id] });
     },
     onError: (e: unknown) => setError(e instanceof Error ? e.message : "تعذّر تنفيذ المهمة"),
   });
+
 
   const busy = send.isPending || skillRun.isPending;
 
