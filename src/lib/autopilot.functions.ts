@@ -42,11 +42,13 @@ export const getAutopilot = createServerFn({ method: "POST" })
 const saveInput = z.object({
   workspaceId: z.string().uuid(),
   active: z.boolean(),
-  providers: z.array(z.string().min(1).max(40)).max(4),
-  brief: z.string().max(600).default(""),
+  providers: z.array(z.string().min(1).max(40)).max(12),
+  brief: z.string().max(4000).default(""),
   dialect: z.string().min(2).max(20).default("خليجية"),
-  postsPerDay: z.number().int().min(1).max(3),
-  hours: z.array(z.number().int().min(0).max(23)).min(1).max(3),
+  // مواعيد حرّة بصيغة HH:MM بتوقيت المستخدم — حتى ٢٤ موعداً في اليوم.
+  slots: z.array(z.string().regex(/^\d{1,2}:\d{2}$/)).min(1).max(24),
+  days: z.array(z.number().int().min(0).max(6)).min(1).max(7).default([0, 1, 2, 3, 4, 5, 6]),
+  timezone: z.string().min(3).max(60).default("Asia/Riyadh"),
   mode: z.enum(["auto", "review"]),
   withImage: z.boolean(),
 });
@@ -57,9 +59,16 @@ export const saveAutopilot = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => saveInput.parse(input))
   .handler(async ({ data, context }) => {
     const admin = await assertOwner(context.supabase, data.workspaceId);
-    const { nextSlot } = await import("./autopilot.server");
+    const { nextRun, normalizeTiming } = await import("./autopilot.server");
 
-    const hours = [...new Set(data.hours)].sort((a, b) => a - b).slice(0, data.postsPerDay);
+    const timing = normalizeTiming({
+      slots: data.slots,
+      days: data.days,
+      timezone: data.timezone,
+    });
+    const slots = timing.minutes.map(
+      (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`,
+    );
     const { data: row, error } = await admin
       .from("social_autopilot")
       .upsert(
@@ -70,11 +79,14 @@ export const saveAutopilot = createServerFn({ method: "POST" })
           providers: data.providers,
           brief: data.brief,
           dialect: data.dialect,
-          posts_per_day: hours.length,
-          hours,
+          posts_per_day: Math.min(slots.length, 32767),
+          hours: timing.minutes.map((m) => Math.floor(m / 60)),
+          slots,
+          days: timing.days,
+          timezone: timing.timezone,
           mode: data.mode,
           with_image: data.withImage,
-          next_run_at: nextSlot(hours).toISOString(),
+          next_run_at: nextRun({ slots, days: timing.days, timezone: timing.timezone }).toISOString(),
           paused_reason: null,
           locked_at: null,
         },
