@@ -8,9 +8,19 @@ const cols: { t: string; l: { label: string; to: string }[] }[] = [
     l: [
       { label: "الموظفون", to: "/employees" },
       { label: "المزايا", to: "/features" },
+      { label: "التكاملات", to: "/integrations" },
       { label: "كيف يعمل", to: "/how-it-works" },
       { label: "الأسعار", to: "/pricing" },
-      { label: "الأسئلة الشائعة", to: "/faq" },
+    ],
+  },
+  {
+    t: "الحلول",
+    l: [
+      { label: "المتاجر الإلكترونية", to: "/use-cases/ecommerce" },
+      { label: "المطاعم والكافيهات", to: "/use-cases/restaurants" },
+      { label: "العيادات", to: "/use-cases/clinics" },
+      { label: "العقار والمقاولات", to: "/use-cases/realestate" },
+      { label: "كل القطاعات", to: "/use-cases" },
     ],
   },
   {
@@ -19,6 +29,7 @@ const cols: { t: string; l: { label: string; to: string }[] }[] = [
       { label: "من نحن", to: "/about" },
       { label: "قصص النجاح", to: "/stories" },
       { label: "المدونة", to: "/blog" },
+      { label: "الأسئلة الشائعة", to: "/faq" },
       { label: "تواصل معنا", to: "/contact" },
     ],
   },
@@ -32,6 +43,7 @@ const cols: { t: string; l: { label: string; to: string }[] }[] = [
     ],
   },
 ];
+
 
 const integrations = ["instagram", "linkedin", "x", "tiktok", "gmail", "slack", "notion", "shopify"];
 

@@ -6,12 +6,15 @@ import { useScrolled } from "@/hooks/use-reveal";
 
 const links = [
   { label: "الموظفون", to: "/employees" },
+  { label: "الحلول", to: "/use-cases" },
   { label: "المزايا", to: "/features" },
+  { label: "التكاملات", to: "/integrations" },
   { label: "كيف يعمل", to: "/how-it-works" },
   { label: "الأسعار", to: "/pricing" },
   { label: "قصص النجاح", to: "/stories" },
   { label: "المدونة", to: "/blog" },
 ] as const;
+
 
 export function Nav({ variant = "over" }: { variant?: "over" | "solid" }) {
   const scrolled = useScrolled(24);
