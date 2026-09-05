@@ -209,18 +209,33 @@ export function Employees() {
               style={{ backgroundColor: current.tint }}
             />
             <div className="relative">
-              <div className="flex items-center gap-4">
-                <span
-                  className="grid size-14 place-items-center rounded-2xl text-background"
-                  style={{ backgroundColor: current.tint }}
-                >
-                  <current.icon className="size-6" strokeWidth={2.2} />
+              <div className="flex items-center gap-5">
+                <span className="relative block size-24 shrink-0 overflow-hidden rounded-3xl shadow-card">
+                  <Portrait memberId={current.id} name={current.name} className="size-full" />
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0 h-1/3"
+                    style={{
+                      background: `linear-gradient(to top, color-mix(in oklab, ${current.tint} 55%, transparent), transparent)`,
+                    }}
+                  />
                 </span>
                 <div>
                   <h3 className="font-display text-2xl font-black">{current.name}</h3>
                   <p className="text-muted-foreground">{current.role}</p>
+                  <span
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
+                    style={{
+                      background: `color-mix(in oklab, ${current.tint} 16%, transparent)`,
+                      color: current.tint,
+                    }}
+                  >
+                    <current.icon className="size-3.5" strokeWidth={2.4} />
+                    متاح الآن
+                  </span>
                 </div>
               </div>
+
 
               <p className="mt-6 text-lg leading-relaxed">{current.summary}</p>
 
