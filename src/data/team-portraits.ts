@@ -73,5 +73,5 @@ const portraits: Record<Region, Record<string, string>> = {
 };
 
 export function portraitOf(memberId: string, region: Region): string {
-  return portraits[region][memberId] ?? portraits.gulf[memberId] ?? portraits.gulf.sonny!;
+  return portraits[region][memberId] ?? portraits.gulf[memberId] ?? sonnyGulf;
 }
