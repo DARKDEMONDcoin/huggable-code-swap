@@ -1,0 +1,13 @@
+import { supabaseAdmin as a } from "../../src/integrations/supabase/client.server";
+import { runAutopilotRow, shortForX, extractPost } from "../../src/lib/autopilot.server";
+const WS="2912523e-49af-4b9b-8ab8-11477c48d0b3";
+const cap=(await a.from("social_posts").select("body").eq("workspace_id",WS).limit(1).single()).data!.body;
+const x=shortForX(cap);
+console.log("X:",x.length,"حرفاً\n",x);
+console.log("\nوضع المراجعة:");
+await a.from("social_autopilot").update({mode:"review",providers:["facebook"],next_run_at:new Date().toISOString(),locked_at:null}).eq("workspace_id",WS);
+const before=(await a.from("social_posts").select("id").eq("workspace_id",WS)).data!.length;
+const rep=await runAutopilotRow(a,(await a.from("social_autopilot").select("*").eq("workspace_id",WS).single()).data!);
+const after=(await a.from("social_posts").select("id").eq("workspace_id",WS)).data!.length;
+const t=(await a.from("tasks").select("status,scheduled,title").eq("workspace_id",WS).order("created_at",{ascending:false}).limit(1).single()).data;
+console.log(rep,"| صفوف الطابور قبل/بعد:",before,after,"| المهمة:",t);

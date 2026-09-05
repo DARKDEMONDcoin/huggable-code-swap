@@ -155,9 +155,19 @@ function AutopilotPage() {
               </span>
               <div>
                 <h2 className="font-display text-xl font-black">تشغيل الطيار</h2>
-                <p className="text-sm text-ink-soft">
-                  {row?.last_status ?? "لم يعمل بعد."}
-                </p>
+                <p className="text-sm text-ink-soft">{row?.last_status ?? "لم يعمل بعد."}</p>
+                {row?.active && row.next_run_at ? (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    المنشور القادم:{" "}
+                    {new Date(row.next_run_at).toLocaleString("ar", {
+                      weekday: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      timeZone: "Asia/Riyadh",
+                    })}
+                  </p>
+                ) : null}
+
               </div>
             </div>
             <button
