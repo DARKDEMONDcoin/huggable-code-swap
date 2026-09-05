@@ -8,7 +8,7 @@ import { useConnectedAccounts } from "@/lib/data";
 import { publishSocialNow, scheduleSocialPost } from "@/lib/social-queue.functions";
 
 /** المنصات التي يدعمها سِراج للنشر المباشر من داخل «سهل». */
-const PUBLISHABLE = ["instagram", "facebook", "linkedin", "x", "youtube"] as const;
+const PUBLISHABLE = ["instagram", "facebook", "linkedin", "x", "pinterest", "youtube"] as const;
 
 /** يلتقط أول صورة داخل المخرج (رابط مباشر أو صيغة ماركداون). */
 export function imageFromOutput(text: string | null | undefined): string | null {
