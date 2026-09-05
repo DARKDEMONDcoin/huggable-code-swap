@@ -147,18 +147,18 @@ export const askEmployee = createServerFn({ method: "POST" })
     if (assistantError) throw new Error(assistantError.message);
 
     let createdTaskId: string | null = null;
-    if (deliverable?.title && deliverable.body) {
+    for (const deliverable of deliverables) {
       const { data: task } = await supabase
         .from("tasks")
         .insert({
           workspace_id: data.workspaceId,
           employee_id: data.employeeId,
-          title: deliverable.title,
+          title: deliverable.title!,
           detail: reply.slice(0, 400),
           kind: deliverable.kind ?? persona.kind,
           channel: deliverable.channel ?? persona.channel,
           status: "review",
-          output: deliverable.body,
+          output: deliverable.body!,
           scheduled: deliverable.scheduled ?? "بانتظار اعتمادك",
           steps: [
             { label: "فهم الطلب", state: "done" },
@@ -169,8 +169,9 @@ export const askEmployee = createServerFn({ method: "POST" })
         })
         .select("id")
         .single();
-      createdTaskId = task?.id ?? null;
+      createdTaskId = createdTaskId ?? task?.id ?? null;
     }
+
 
     return { reply, messageId: assistantRow.id, createdTaskId };
   });
