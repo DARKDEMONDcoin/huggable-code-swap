@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Loader2, Send, Link2 } from "lucide-react";
+import { CalendarClock, Loader2, Send, Link2, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 import { AppIcon, appLabel } from "@/components/site/AppIcon";
 import { useConnectedAccounts } from "@/lib/data";
+import { adaptForProvider, bestTimeFor } from "@/lib/post-format";
 import { publishSocialNow, scheduleSocialPost } from "@/lib/social-queue.functions";
 
 /** المنصات التي يدعمها سِراج للنشر المباشر من داخل «سهل». */
 const PUBLISHABLE = ["instagram", "facebook", "linkedin", "x", "pinterest", "youtube"] as const;
+
 
 /** يلتقط أول صورة داخل المخرج (رابط مباشر أو صيغة ماركداون). */
 export function imageFromOutput(text: string | null | undefined): string | null {
@@ -64,8 +66,19 @@ export function PublishPanel({
     [accounts],
   );
 
-  const [provider, setProvider] = useState<string>("");
-  const active = provider || (connected.includes(channel as never) ? channel : connected[0]) || "";
+  // اختيار متعدد مثل مدير التواصل الاحترافي: منشور واحد يخرج على كل المنصات المختارة.
+  const [picked, setPicked] = useState<string[] | null>(null);
+  const active = useMemo(() => {
+    if (picked) return picked.filter((p) => connected.includes(p as never));
+    const preferred = connected.includes(channel as never) ? channel : connected[0];
+    return preferred ? [preferred] : [];
+  }, [picked, connected, channel]);
+
+  const toggle = (p: string) =>
+    setPicked((prev) => {
+      const base = prev ?? active;
+      return base.includes(p) ? base.filter((x) => x !== p) : [...base, p];
+    });
 
   const [when, setWhen] = useState(() => localInputValue(new Date(Date.now() + 3_600_000)));
   const [busy, setBusy] = useState<"now" | "later" | null>(null);
@@ -81,33 +94,62 @@ export function PublishPanel({
     onPublished?.();
   };
 
+  /** يقترح أفضل موعد نشر للمنصة الأولى المختارة. */
+  const suggestBestTime = () => {
+    const target = active[0];
+    if (!target) return;
+    const at = bestTimeFor(target);
+    setWhen(localInputValue(at));
+    setNote(`أفضل وقت مقترح لـ${appLabel(target)}: ${at.toLocaleString("ar-EG")}`);
+  };
+
   const run = async (mode: "now" | "later") => {
+    if (!active.length) return;
     setBusy(mode);
     setNote(null);
-    const base = {
-      workspaceId,
-      employeeId,
-      taskId: taskId ?? null,
-      provider: active,
-      body: text,
-      imageUrl: imageUrl ?? null,
-    };
-    try {
-      if (mode === "now") {
-        await publishSocialNow({ data: base });
-        done(`تم النشر على ${appLabel(active)} ✅`);
-      } else {
-        const at = new Date(when);
-        if (Number.isNaN(at.getTime())) throw new Error("موعد غير صالح.");
-        await scheduleSocialPost({ data: { ...base, scheduledAt: at.toISOString() } });
-        done(`تمت الجدولة على ${appLabel(active)} في ${at.toLocaleString("ar-EG")} ⏱`);
-      }
-    } catch (e) {
-      setNote(e instanceof Error ? e.message : "تعذّر تنفيذ الطلب.");
-    } finally {
+
+    const at = mode === "later" ? new Date(when) : null;
+    if (at && Number.isNaN(at.getTime())) {
+      setNote("موعد غير صالح.");
       setBusy(null);
+      return;
     }
+
+    const ok: string[] = [];
+    const failed: string[] = [];
+
+    for (const provider of active) {
+      // إنستجرام لا يقبل منشوراً بلا صورة — نوضّح السبب بدل فشل غامض.
+      if (provider === "instagram" && !imageUrl) {
+        failed.push(`${appLabel(provider)}: يحتاج صورة`);
+        continue;
+      }
+      const base = {
+        workspaceId,
+        employeeId,
+        taskId: taskId ?? null,
+        provider,
+        body: adaptForProvider(provider, text),
+        imageUrl: imageUrl ?? null,
+      };
+      try {
+        if (at) await scheduleSocialPost({ data: { ...base, scheduledAt: at.toISOString() } });
+        else await publishSocialNow({ data: base });
+        ok.push(appLabel(provider));
+      } catch (e) {
+        failed.push(`${appLabel(provider)}: ${e instanceof Error ? e.message : "تعذّر التنفيذ"}`);
+      }
+    }
+
+    const head = ok.length
+      ? at
+        ? `تمت الجدولة على ${ok.join("، ")} في ${at.toLocaleString("ar-EG")} ⏱`
+        : `تم النشر على ${ok.join("، ")} ✅`
+      : "";
+    done([head, ...failed].filter(Boolean).join("\n"));
+    setBusy(null);
   };
+
 
   if (isLoading) {
     return (
@@ -136,10 +178,10 @@ export function PublishPanel({
           <button
             key={p}
             type="button"
-            onClick={() => setProvider(p)}
-            aria-pressed={active === p}
+            onClick={() => toggle(p)}
+            aria-pressed={active.includes(p)}
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
-              active === p
+              active.includes(p)
                 ? "border-foreground bg-foreground text-background"
                 : "border-border hover:bg-secondary"
             }`}
@@ -150,9 +192,14 @@ export function PublishPanel({
         ))}
       </div>
 
-      {active === "instagram" && !imageUrl ? (
+      {active.includes("instagram") && !imageUrl ? (
         <p className="mt-3 text-xs text-muted-foreground">
           إنستجرام يتطلّب صورة — اطلب من سِراج توليد صورة للمنشور أولاً.
+        </p>
+      ) : null}
+      {active.includes("x") ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          نسخة إكس تُقصَّر تلقائياً إلى ٢٨٠ حرفاً مع أهم هاشتاقين.
         </p>
       ) : null}
 
@@ -160,7 +207,7 @@ export function PublishPanel({
         <button
           type="button"
           onClick={() => void run("now")}
-          disabled={!!busy || !active}
+          disabled={!!busy || !active.length}
           className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-60"
         >
           {busy === "now" ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -177,8 +224,17 @@ export function PublishPanel({
 
         <button
           type="button"
+          onClick={suggestBestTime}
+          disabled={!active.length}
+          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-secondary disabled:opacity-60"
+        >
+          <Sparkles className="size-4" /> أفضل وقت
+        </button>
+
+        <button
+          type="button"
           onClick={() => void run("later")}
-          disabled={!!busy || !active}
+          disabled={!!busy || !active.length}
           className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-secondary disabled:opacity-60"
         >
           {busy === "later" ? (
@@ -190,7 +246,11 @@ export function PublishPanel({
         </button>
       </div>
 
-      {note ? <p className="mt-3 text-xs font-bold text-ink-soft">{note}</p> : null}
+
+      {note ? (
+        <p className="mt-3 whitespace-pre-line text-xs font-bold text-ink-soft">{note}</p>
+      ) : null}
+
     </div>
   );
 }

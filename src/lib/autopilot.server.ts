@@ -124,16 +124,11 @@ export function extractPost(output: string): {
 }
 
 
-/** نسخة مختصرة تناسب حدّ إكس (٢٨٠ حرفاً) وتنتهي عند جملة كاملة مع أهم هاشتاقين. */
-export function shortForX(caption: string): string {
-  const tags = (caption.match(/#[\p{L}\p{N}_]+/gu) ?? []).slice(0, 2).join(" ");
-  const text = caption.replace(/#[\p{L}\p{N}_]+/gu, "").replace(/\n{2,}/g, "\n").trim();
-  const budget = 275 - (tags ? tags.length + 1 : 0);
-  if (text.length <= budget) return [text, tags].filter(Boolean).join("\n");
-  const cut = text.slice(0, budget);
-  const stop = Math.max(cut.lastIndexOf("."), cut.lastIndexOf("!"), cut.lastIndexOf("؟"), cut.lastIndexOf("\n"));
-  return [(stop > 80 ? cut.slice(0, stop + 1) : cut).trim(), tags].filter(Boolean).join("\n");
-}
+/** نسخة إكس المختصرة — منطق موحّد مع لوحة النشر. */
+import { shortForX } from "./post-format";
+export { shortForX };
+
+
 
 /** رفض دائم من مزوّد الذكاء (رصيد/سياسة) — يوقف الطيار بدل تكرار المحاولة. */
 function isBlocked(message: string): boolean {
