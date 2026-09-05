@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 
 import { team } from "@/data/team";
+import { supabase } from "@/integrations/supabase/client";
+import { GUEST_EMAIL } from "@/lib/guest.functions";
+
 import { useProfile, useTasks, useWorkspace } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
