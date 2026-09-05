@@ -36,7 +36,7 @@ function localInputValue(date: Date): string {
 type Props = {
   workspaceId: string;
   employeeId: string;
-  taskId: string;
+  taskId?: string | null;
   channel: string;
   body: string;
   onPublished?: () => void;
@@ -87,7 +87,7 @@ export function PublishPanel({
     const base = {
       workspaceId,
       employeeId,
-      taskId,
+      taskId: taskId ?? null,
       provider: active,
       body: text,
       imageUrl: imageUrl ?? null,
