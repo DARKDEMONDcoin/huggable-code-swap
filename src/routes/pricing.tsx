@@ -79,11 +79,14 @@ function PricingPage() {
                   <h2 className="font-display text-2xl font-black">{p.name}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{p.tag}</p>
                   <div className="mt-6 flex items-end gap-2">
-                    <span className="font-display text-4xl font-black text-primary">{p.price}</span>
-                    {p.price !== "حسب الطلب" ? (
+                    <span className="font-display text-4xl font-black text-primary">
+                      {priceOf(p, false)}
+                    </span>
+                    {p.monthly !== null ? (
                       <span className="pb-1 text-sm text-muted-foreground">ريال / شهرياً</span>
                     ) : null}
                   </div>
+
                   <ul className="mt-6 space-y-3">
                     {p.perks.map((k) => (
                       <li key={k} className="flex items-start gap-2.5">
