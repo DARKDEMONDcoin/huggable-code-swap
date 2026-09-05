@@ -208,11 +208,11 @@ function ChatPage() {
             {(messages ?? []).map((m) => (
               <div
                 key={m.id}
-                className={cn("flex gap-3", m.role === "user" ? "justify-end" : "justify-start")}
+                className={cn("flex gap-3", m.role === "user" ? "justify-start" : "justify-end")}
               >
                 {m.role !== "user" ? (
                   <span
-                    className="grid size-9 shrink-0 place-items-center rounded-xl"
+                    className="order-2 grid size-9 shrink-0 place-items-center rounded-xl"
                     style={{ background: member.tintSoft, color: member.tint }}
                   >
                     <member.icon className="size-4.5" strokeWidth={2.2} />
@@ -222,8 +222,8 @@ function ChatPage() {
                   className={cn(
                     "min-w-0 max-w-[min(46rem,88%)] rounded-3xl px-5 py-3.5 leading-relaxed",
                     m.role === "user"
-                      ? "rounded-se-lg bg-foreground text-background whitespace-pre-wrap"
-                      : "rounded-ss-lg border border-border bg-card shadow-sm",
+                      ? "rounded-ss-lg bg-foreground text-background whitespace-pre-wrap"
+                      : "order-1 rounded-se-lg border border-border bg-card shadow-sm",
                   )}
                 >
                   {m.role === "user" ? <p dir="auto">{m.body}</p> : <Markdown body={prettyBody(m.body)} />}
@@ -247,8 +247,8 @@ function ChatPage() {
             ))}
 
             {pending ? (
-              <div className="flex justify-end gap-3">
-                <div className="min-w-0 max-w-[min(46rem,88%)] rounded-3xl rounded-se-lg bg-foreground px-5 py-3.5 leading-relaxed text-background opacity-80">
+              <div className="flex justify-start gap-3">
+                <div className="min-w-0 max-w-[min(46rem,88%)] rounded-3xl rounded-ss-lg bg-foreground px-5 py-3.5 leading-relaxed text-background opacity-80">
                   <p dir="auto" className="whitespace-pre-wrap">
                     {pending}
                   </p>
