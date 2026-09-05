@@ -178,10 +178,10 @@ export function PublishPanel({
           <button
             key={p}
             type="button"
-            onClick={() => setProvider(p)}
-            aria-pressed={active === p}
+            onClick={() => toggle(p)}
+            aria-pressed={active.includes(p)}
             className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold transition-colors ${
-              active === p
+              active.includes(p)
                 ? "border-foreground bg-foreground text-background"
                 : "border-border hover:bg-secondary"
             }`}
@@ -192,9 +192,14 @@ export function PublishPanel({
         ))}
       </div>
 
-      {active === "instagram" && !imageUrl ? (
+      {active.includes("instagram") && !imageUrl ? (
         <p className="mt-3 text-xs text-muted-foreground">
           إنستجرام يتطلّب صورة — اطلب من سِراج توليد صورة للمنشور أولاً.
+        </p>
+      ) : null}
+      {active.includes("x") ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          نسخة إكس تُقصَّر تلقائياً إلى ٢٨٠ حرفاً مع أهم هاشتاقين.
         </p>
       ) : null}
 
@@ -202,7 +207,7 @@ export function PublishPanel({
         <button
           type="button"
           onClick={() => void run("now")}
-          disabled={!!busy || !active}
+          disabled={!!busy || !active.length}
           className="inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-bold text-background disabled:opacity-60"
         >
           {busy === "now" ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
@@ -219,8 +224,17 @@ export function PublishPanel({
 
         <button
           type="button"
+          onClick={suggestBestTime}
+          disabled={!active.length}
+          className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-secondary disabled:opacity-60"
+        >
+          <Sparkles className="size-4" /> أفضل وقت
+        </button>
+
+        <button
+          type="button"
           onClick={() => void run("later")}
-          disabled={!!busy || !active}
+          disabled={!!busy || !active.length}
           className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2.5 text-sm font-bold transition-colors hover:bg-secondary disabled:opacity-60"
         >
           {busy === "later" ? (
@@ -231,6 +245,7 @@ export function PublishPanel({
           جدولة
         </button>
       </div>
+
 
       {note ? <p className="mt-3 text-xs font-bold text-ink-soft">{note}</p> : null}
     </div>
