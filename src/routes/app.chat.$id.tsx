@@ -141,8 +141,10 @@ function ChatPage() {
     if (!body || !workspace || busy) return;
     setError(null);
     setDraft("");
+    setPending(body);
     send.mutate(body);
   };
+
 
   return (
     <AppShell
