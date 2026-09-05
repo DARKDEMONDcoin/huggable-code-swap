@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Megaphone, Mail, Handshake, PenTool, Palette, LineChart } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { Portrait, RegionPicker } from "@/components/site/Portrait";
 import { cn } from "@/lib/utils";
 
 type Employee = {
@@ -145,6 +146,10 @@ export function Employees() {
           كل موظف متخصص في مجاله ومتصل ببقية الفريق. يتشاركون نفس السياق عن شركتك، فلا تشرح نفسك
           مرتين.
         </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold text-muted-foreground">فريقك بزيّ بلدك:</span>
+          <RegionPicker />
+        </div>
       </Reveal>
 
       <div className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -166,10 +171,14 @@ export function Employees() {
                     )}
                   >
                     <span
-                      className="grid size-11 shrink-0 place-items-center rounded-2xl text-background"
-                      style={{ backgroundColor: e.tint }}
+                      className="relative size-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-offset-2 ring-offset-card transition-all duration-300"
+                      style={{ ["--tw-ring-color" as string]: e.tint }}
                     >
-                      <e.icon className="size-5" strokeWidth={2.2} />
+                      <Portrait
+                        memberId={e.id}
+                        name={e.name}
+                        className="size-full scale-105 transition-transform duration-500"
+                      />
                     </span>
                     <span className="min-w-0">
                       <span className="block font-display text-lg font-extrabold">{e.name}</span>
