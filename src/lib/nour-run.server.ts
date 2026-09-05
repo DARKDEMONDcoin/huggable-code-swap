@@ -10,6 +10,7 @@ import { getSkill } from "@/data/skills";
 import { freeChat, gatherEvidence, planResearch } from "./nour-research.server";
 import { withBudget } from "./seo-research.server";
 import { memoryBlock } from "./memory.server";
+import { actionTruthRules, sanitizeActionClaims } from "./action-claims";
 
 export type Client = SupabaseClient<Database>;
 
@@ -391,6 +392,7 @@ export async function executeSkill(
       : "",
 
     "أنت تنفّذ الآن مهمة محددة وتسلّم مخرجاً نهائياً جاهزاً للاستخدام — لا أسئلة ولا مقدمات ولا اعتذارات.",
+    actionTruthRules,
     "اكتب بالعربية الفصحى الواضحة، بصيغة Markdown منسّقة، والتزم حرفياً بالهيكل المطلوب.",
   ]
     .filter(Boolean)
@@ -419,7 +421,7 @@ export async function executeSkill(
 
   // إزالة المجاملات الافتتاحية («أهلاً بك… بصفتي…») حتى يبدأ المخرج بالمحتوى مباشرة.
   // لو كان المخرج كله مجاملة فلا نُفرغه — نُعيد الأصل بدل تسليم صفحة فارغة.
-  output = sanitizeOutput(stripPreamble(output) || output);
+  output = sanitizeActionClaims(sanitizeOutput(stripPreamble(output) || output));
 
 
   // صورة رئيسية مجانية لكل مخرج تحريري (مقال/صفحة/حزمة نشر) — مثل Penny وأدق منها:

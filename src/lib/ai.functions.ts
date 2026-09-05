@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { freeChat } from "@/lib/nour-research.server";
+import { actionTruthRules, sanitizeActionClaims } from "@/lib/action-claims";
 import {
   evidenceRules,
   executeSkill,
@@ -37,7 +38,7 @@ export const askEmployee = createServerFn({ method: "POST" })
     const persona = personas[data.employeeId];
     if (!persona) throw new Error("موظف غير معروف.");
 
-    const [{ data: workspace }, { data: brain }, { data: history }] = await Promise.all([
+    const [{ data: workspace }, { data: brain }, { data: history }, { data: linked }] = await Promise.all([
       supabase.from("workspaces").select("*").eq("id", data.workspaceId).maybeSingle(),
       supabase.from("brain_items").select("title, body, kind").eq("workspace_id", data.workspaceId),
       supabase
@@ -47,7 +48,15 @@ export const askEmployee = createServerFn({ method: "POST" })
         .eq("employee_id", data.employeeId)
         .order("created_at", { ascending: false })
         .limit(12),
+      supabase
+        .from("pipedream_accounts")
+        .select("provider")
+        .eq("workspace_id", data.workspaceId)
+        .eq("status", "connected"),
     ]);
+
+    // حالة الربط الحقيقية تُحقن في التعليمات حتى لا يدّعي الموظف نشراً مستحيلاً.
+    const connected = [...new Set((linked ?? []).map((a) => a.provider))];
 
     if (!workspace) throw new Error("مساحة العمل غير موجودة.");
 
@@ -80,6 +89,10 @@ export const askEmployee = createServerFn({ method: "POST" })
         : "",
       brainText ? `معرفة العلامة:\n${brainText}` : "",
       research.block ? `${evidenceRules}\n\n## أدلة ميدانية (لحظية)\n${research.block}` : "",
+      connected.length
+        ? `الحسابات المربوطة فعلياً: ${connected.join("، ")}. غيرها غير مربوط.`
+        : "لا يوجد أي حساب مربوط بهذه المساحة الآن — لا يمكن النشر على أي منصة قبل الربط من صفحة التكاملات.",
+      actionTruthRules,
       "أجب دائماً بالعربية وبإيجاز عملي.",
       'أعد ردك بصيغة JSON فقط بالشكل: {"reply": "نص ردك للمستخدم", "deliverable": {"title": "عنوان المخرج", "kind": "نوع المخرج", "channel": "المنصة", "body": "نص المخرج الجاهز", "scheduled": "متى يُنفّذ"} }',
       'إن لم يطلب المستخدم مخرجاً جاهزاً للنشر أو الإرسال، اجعل "deliverable" القيمة null.',
@@ -129,6 +142,8 @@ export const askEmployee = createServerFn({ method: "POST" })
       deliverables = [];
     }
 
+
+    reply = sanitizeActionClaims(reply, connected);
 
     if (research.used.length) {
       reply = `${reply.trim()}\n\n— استندتُ إلى بيانات حقيقية: ${research.used.join(" · ")}`;
