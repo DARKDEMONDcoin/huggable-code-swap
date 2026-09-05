@@ -103,8 +103,10 @@ function ChatPage() {
   const { data: integrations } = useIntegrations(workspace?.id);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<string | null>(null);
+  const [savedTask, setSavedTask] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
   const [showSettings, setShowSettings] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
