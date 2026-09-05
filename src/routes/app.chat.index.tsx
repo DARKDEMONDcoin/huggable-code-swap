@@ -33,11 +33,12 @@ function ChatIndex() {
               className="group rounded-3xl border border-border bg-card p-6 transition-transform duration-300 hover:-translate-y-1"
             >
               <div className="flex items-center gap-3">
-                <span
-                  className="grid size-12 place-items-center rounded-2xl"
-                  style={{ background: m.tintSoft, color: m.tint }}
-                >
-                  <m.icon className="size-6" strokeWidth={2.2} />
+                <span className="relative block size-12 shrink-0 overflow-hidden rounded-2xl shadow-card">
+                  <Portrait
+                    memberId={m.id}
+                    name={m.name}
+                    className="size-full transition-transform duration-500 group-hover:scale-105"
+                  />
                 </span>
                 <span>
                   <span className="block font-display font-black">{m.name}</span>
