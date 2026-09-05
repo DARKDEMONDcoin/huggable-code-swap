@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { Portrait } from "@/components/site/Portrait";
 import {
   LayoutDashboard,
   MessagesSquare,
@@ -119,11 +120,8 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
               pathname === `/app/chat/${m.id}` && "bg-secondary",
             )}
           >
-            <span
-              className="grid size-7 shrink-0 place-items-center rounded-lg"
-              style={{ background: m.tintSoft, color: m.tint }}
-            >
-              <m.icon className="size-3.5" strokeWidth={2.4} />
+            <span className="relative block size-7 shrink-0 overflow-hidden rounded-lg">
+              <Portrait memberId={m.id} name={m.name} className="size-full" />
             </span>
             <span className="truncate font-semibold">{m.name}</span>
             <span className="ms-auto size-2 shrink-0 rounded-full bg-jade" />

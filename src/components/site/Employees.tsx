@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Megaphone, Mail, Handshake, PenTool, Palette, LineChart } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { Portrait, RegionPicker } from "@/components/site/Portrait";
 import { cn } from "@/lib/utils";
 
 type Employee = {
@@ -145,6 +146,10 @@ export function Employees() {
           كل موظف متخصص في مجاله ومتصل ببقية الفريق. يتشاركون نفس السياق عن شركتك، فلا تشرح نفسك
           مرتين.
         </p>
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold text-muted-foreground">فريقك بزيّ بلدك:</span>
+          <RegionPicker />
+        </div>
       </Reveal>
 
       <div className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -166,10 +171,14 @@ export function Employees() {
                     )}
                   >
                     <span
-                      className="grid size-11 shrink-0 place-items-center rounded-2xl text-background"
-                      style={{ backgroundColor: e.tint }}
+                      className="relative size-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-offset-2 ring-offset-card transition-all duration-300"
+                      style={{ ["--tw-ring-color" as string]: e.tint }}
                     >
-                      <e.icon className="size-5" strokeWidth={2.2} />
+                      <Portrait
+                        memberId={e.id}
+                        name={e.name}
+                        className="size-full scale-105 transition-transform duration-500"
+                      />
                     </span>
                     <span className="min-w-0">
                       <span className="block font-display text-lg font-extrabold">{e.name}</span>
@@ -200,18 +209,33 @@ export function Employees() {
               style={{ backgroundColor: current.tint }}
             />
             <div className="relative">
-              <div className="flex items-center gap-4">
-                <span
-                  className="grid size-14 place-items-center rounded-2xl text-background"
-                  style={{ backgroundColor: current.tint }}
-                >
-                  <current.icon className="size-6" strokeWidth={2.2} />
+              <div className="flex items-center gap-5">
+                <span className="relative block size-24 shrink-0 overflow-hidden rounded-3xl shadow-card">
+                  <Portrait memberId={current.id} name={current.name} className="size-full" />
+                  <span
+                    aria-hidden
+                    className="absolute inset-x-0 bottom-0 h-1/3"
+                    style={{
+                      background: `linear-gradient(to top, color-mix(in oklab, ${current.tint} 55%, transparent), transparent)`,
+                    }}
+                  />
                 </span>
                 <div>
                   <h3 className="font-display text-2xl font-black">{current.name}</h3>
                   <p className="text-muted-foreground">{current.role}</p>
+                  <span
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
+                    style={{
+                      background: `color-mix(in oklab, ${current.tint} 16%, transparent)`,
+                      color: current.tint,
+                    }}
+                  >
+                    <current.icon className="size-3.5" strokeWidth={2.4} />
+                    متاح الآن
+                  </span>
                 </div>
               </div>
+
 
               <p className="mt-6 text-lg leading-relaxed">{current.summary}</p>
 

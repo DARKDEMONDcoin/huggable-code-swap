@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { PageShell, PageHero, CtaBand } from "@/components/site/PageShell";
 import { AppRow } from "@/components/site/AppIcon";
+import { Portrait, RegionPicker } from "@/components/site/Portrait";
 import { Reveal } from "@/components/Reveal";
 import { team } from "@/data/team";
 
@@ -37,20 +38,35 @@ function EmployeesPage() {
       />
 
       <section className="mx-auto max-w-6xl px-5 py-14">
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-sm font-semibold text-muted-foreground">
+            شوف الفريق بزيّ بلدك:
+          </span>
+          <RegionPicker />
+        </div>
+
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
           {team.map((m, i) => (
             <Reveal key={m.id} delay={i * 70}>
               <article className="group flex h-full flex-col rounded-3xl border border-border bg-card p-7 shadow-card transition-all duration-400 hover:-translate-y-1.5 hover:shadow-lift">
                 <div className="flex items-start gap-4">
-                  <span
-                    className="grid size-14 shrink-0 place-items-center rounded-2xl"
-                    style={{ background: m.tintSoft, color: m.tint }}
-                  >
-                    <m.icon className="size-7" strokeWidth={2.1} />
+                  <span className="relative block size-20 shrink-0 overflow-hidden rounded-3xl shadow-card">
+                    <Portrait
+                      memberId={m.id}
+                      name={m.name}
+                      className="size-full transition-transform duration-700 group-hover:scale-105"
+                    />
                   </span>
                   <div>
                     <h2 className="font-display text-2xl font-black">{m.name}</h2>
                     <p className="text-sm font-semibold text-muted-foreground">{m.role}</p>
+                    <span
+                      className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold"
+                      style={{ background: m.tintSoft, color: m.tint }}
+                    >
+                      <m.icon className="size-3.5" strokeWidth={2.4} />
+                      {m.tagline}
+                    </span>
                   </div>
                 </div>
 
