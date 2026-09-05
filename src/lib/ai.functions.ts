@@ -104,16 +104,31 @@ export const askEmployee = createServerFn({ method: "POST" })
     );
 
     let reply = raw;
-    let deliverable: Deliverable | null = null;
+    let deliverables: Deliverable[] = [];
 
     try {
       const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "").trim();
-      const parsed = JSON.parse(cleaned) as { reply?: string; deliverable?: Deliverable | null };
-      if (parsed.reply) reply = parsed.reply;
-      deliverable = parsed.deliverable ?? null;
+      const parsed: unknown = JSON.parse(cleaned);
+      // النموذج قد يعيد كائناً واحداً أو مصفوفة كائنات — نتعامل مع الحالتين.
+      const items = (Array.isArray(parsed) ? parsed : [parsed]).filter(
+        (x): x is { reply?: string; deliverable?: Deliverable | null } =>
+          Boolean(x) && typeof x === "object",
+      );
+      const replies = items.map((x) => (typeof x.reply === "string" ? x.reply.trim() : "")).filter(Boolean);
+      deliverables = items
+        .map((x) => x.deliverable)
+        .filter((d): d is Deliverable => Boolean(d?.title && d.body));
+      if (replies.length) {
+        reply = replies.join("\n\n");
+      } else if (deliverables.length) {
+        reply = deliverables
+          .map((d) => `### ${d.title}\n\n${d.body}`)
+          .join("\n\n---\n\n");
+      }
     } catch {
-      deliverable = null;
+      deliverables = [];
     }
+
 
     if (research.used.length) {
       reply = `${reply.trim()}\n\n— استندتُ إلى بيانات حقيقية: ${research.used.join(" · ")}`;
