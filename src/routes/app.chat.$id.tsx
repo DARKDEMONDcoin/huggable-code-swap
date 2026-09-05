@@ -210,11 +210,8 @@ function ChatPage() {
           <div className="flex-1 space-y-4 px-5 py-6">
             {(messages ?? []).length === 0 ? (
               <div className="rounded-3xl border border-border bg-card p-8 text-center">
-                <span
-                  className="mx-auto grid size-12 place-items-center rounded-2xl"
-                  style={{ background: member.tintSoft, color: member.tint }}
-                >
-                  <member.icon className="size-6" strokeWidth={2.2} />
+                <span className="relative mx-auto block size-16 overflow-hidden rounded-3xl shadow-card">
+                  <Portrait memberId={member.id} name={member.name} className="size-full" />
                 </span>
                 <p className="mt-4 font-bold">{member.tagline}</p>
                 <p className="mt-1 text-sm text-ink-soft">اكتب طلبك بالأسفل وسأبدأ فوراً.</p>
@@ -227,11 +224,8 @@ function ChatPage() {
                 className={cn("flex gap-3", m.role === "user" ? "justify-start" : "justify-end")}
               >
                 {m.role !== "user" ? (
-                  <span
-                    className="order-2 grid size-9 shrink-0 place-items-center rounded-xl"
-                    style={{ background: member.tintSoft, color: member.tint }}
-                  >
-                    <member.icon className="size-4.5" strokeWidth={2.2} />
+                  <span className="relative order-2 block size-9 shrink-0 overflow-hidden rounded-xl shadow-sm">
+                    <Portrait memberId={member.id} name={member.name} className="size-full" />
                   </span>
                 ) : null}
                 <div
@@ -287,11 +281,8 @@ function ChatPage() {
             {busy ? (
 
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                <span
-                  className="grid size-9 shrink-0 place-items-center rounded-xl"
-                  style={{ background: member.tintSoft, color: member.tint }}
-                >
-                  <member.icon className="size-4.5" strokeWidth={2.2} />
+                <span className="relative block size-9 shrink-0 overflow-hidden rounded-xl">
+                  <Portrait memberId={member.id} name={member.name} className="size-full" />
                 </span>
                 <Loader2 className="size-4 animate-spin" /> {member.name} يعمل على طلبك…
               </div>
