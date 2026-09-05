@@ -21,6 +21,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { signIn } from "@/lib/auth";
 import { GUEST_EMAIL } from "@/lib/guest.functions";
 import { createAccount } from "@/lib/signup.functions";
+import { plans } from "@/data/pricing";
+
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
