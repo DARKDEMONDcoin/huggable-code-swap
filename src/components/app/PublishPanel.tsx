@@ -1,14 +1,16 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, Loader2, Send, Link2 } from "lucide-react";
+import { CalendarClock, Loader2, Send, Link2, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 
 import { AppIcon, appLabel } from "@/components/site/AppIcon";
 import { useConnectedAccounts } from "@/lib/data";
+import { adaptForProvider, bestTimeFor } from "@/lib/post-format";
 import { publishSocialNow, scheduleSocialPost } from "@/lib/social-queue.functions";
 
 /** المنصات التي يدعمها سِراج للنشر المباشر من داخل «سهل». */
 const PUBLISHABLE = ["instagram", "facebook", "linkedin", "x", "pinterest", "youtube"] as const;
+
 
 /** يلتقط أول صورة داخل المخرج (رابط مباشر أو صيغة ماركداون). */
 export function imageFromOutput(text: string | null | undefined): string | null {
