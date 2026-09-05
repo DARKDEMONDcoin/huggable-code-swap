@@ -28,18 +28,28 @@ export const Route = createFileRoute("/app/autopilot")({
   component: AutopilotPage,
 });
 
-const PROVIDERS = ["instagram", "facebook", "linkedin", "x"] as const;
+const PROVIDERS = ["instagram", "facebook", "linkedin", "x", "pinterest", "youtube"] as const;
 const DIALECTS = ["خليجية", "مصرية", "شامية", "مغربية", "فصحى"] as const;
-/** ساعات النشر تُعرض بتوقيت مكة (UTC+3) وتُخزّن بـUTC. */
-const OFFSET = 3;
-const SLOT_HOURS = [8, 12, 15, 18, 21] as const;
+const DAY_NAMES = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"] as const;
+/** مناطق زمنية شائعة للمنطقة العربية + خيار توقيت الجهاز. */
+const ZONES = [
+  "Asia/Riyadh",
+  "Africa/Cairo",
+  "Asia/Dubai",
+  "Asia/Qatar",
+  "Asia/Kuwait",
+  "Asia/Baghdad",
+  "Asia/Amman",
+  "Asia/Beirut",
+  "Africa/Casablanca",
+  "Africa/Tunis",
+  "Africa/Algiers",
+  "Europe/Istanbul",
+  "Europe/London",
+  "America/New_York",
+  "UTC",
+] as const;
 
-function toLocal(utcHour: number) {
-  return (utcHour + OFFSET + 24) % 24;
-}
-function toUtc(localHour: number) {
-  return (localHour - OFFSET + 24) % 24;
-}
 
 function AutopilotPage() {
   const { data: workspace } = useWorkspace();
