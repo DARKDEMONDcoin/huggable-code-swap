@@ -255,7 +255,9 @@ export function AppShell({
             </div>
           </div>
         </header>
+        <GuestBar />
         <main className={padded ? "px-5 py-7" : ""}>{children}</main>
+
       </div>
     </div>
   );
