@@ -247,8 +247,8 @@ function ChatPage() {
             ))}
 
             {pending ? (
-              <div className="flex justify-end gap-3">
-                <div className="min-w-0 max-w-[min(46rem,88%)] rounded-3xl rounded-se-lg bg-foreground px-5 py-3.5 leading-relaxed text-background opacity-80">
+              <div className="flex justify-start gap-3">
+                <div className="min-w-0 max-w-[min(46rem,88%)] rounded-3xl rounded-ss-lg bg-foreground px-5 py-3.5 leading-relaxed text-background opacity-80">
                   <p dir="auto" className="whitespace-pre-wrap">
                     {pending}
                   </p>
