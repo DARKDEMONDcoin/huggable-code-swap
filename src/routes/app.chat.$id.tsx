@@ -15,6 +15,7 @@ import { Markdown } from "@/components/app/Markdown";
 import { PublishPanel } from "@/components/app/PublishPanel";
 import { PublishToWordPress } from "@/components/app/PublishToWordPress";
 import { ActionPanel } from "@/components/app/ActionPanel";
+import { Portrait } from "@/components/site/Portrait";
 
 
 import { skillsFor, type Skill } from "@/data/skills";
