@@ -93,18 +93,33 @@ export function Pricing() {
                     </span>
                   </div>
 
-                  <Link
-                    to={p.id === "scale" ? "/contact" : "/auth"}
-                    search={p.id === "scale" ? undefined : { mode: "signup", plan: p.id }}
-                    className={cn(
-                      "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
-                      p.highlight
-                        ? "bg-background text-foreground"
-                        : "bg-foreground text-background",
-                    )}
-                  >
-                    {p.cta}
-                  </Link>
+                  {p.id === "scale" ? (
+                    <Link
+                      to="/contact"
+                      className={cn(
+                        "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
+                        p.highlight
+                          ? "bg-background text-foreground"
+                          : "bg-foreground text-background",
+                      )}
+                    >
+                      {p.cta}
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      search={{ mode: "signup", plan: p.id }}
+                      className={cn(
+                        "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
+                        p.highlight
+                          ? "bg-background text-foreground"
+                          : "bg-foreground text-background",
+                      )}
+                    >
+                      {p.cta}
+                    </Link>
+                  )}
+
 
                   <ul className="mt-7 space-y-3">
                     {p.perks.map((f) => (
