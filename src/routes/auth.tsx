@@ -19,6 +19,7 @@ import { PageShell, PageHero } from "@/components/site/PageShell";
 import { Reveal } from "@/components/Reveal";
 import { supabase } from "@/integrations/supabase/client";
 import { signIn } from "@/lib/auth";
+import { GUEST_EMAIL } from "@/lib/guest.functions";
 import { createAccount } from "@/lib/signup.functions";
 import { cn } from "@/lib/utils";
 
@@ -113,9 +114,13 @@ function AuthPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (!active) return;
       const user = data.user;
-      if (user && !user.is_anonymous && user.email) {
-        void navigate({ to: "/app", replace: true });
+      if (!user || user.is_anonymous || !user.email) return;
+      if (user.email === GUEST_EMAIL) {
+        // جلسة التجربة: ننهيها هنا حتى يستطيع الزائر التسجيل بحسابه
+        void supabase.auth.signOut();
+        return;
       }
+      void navigate({ to: "/app", replace: true });
     });
     return () => {
       active = false;
