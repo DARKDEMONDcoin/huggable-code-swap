@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -20,6 +20,9 @@ import {
 } from "lucide-react";
 
 import { team } from "@/data/team";
+import { supabase } from "@/integrations/supabase/client";
+import { GUEST_EMAIL } from "@/lib/guest.functions";
+
 import { useProfile, useTasks, useWorkspace } from "@/lib/data";
 import { cn } from "@/lib/utils";
 
@@ -155,7 +158,39 @@ function SidebarBody({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+/** شريط يوضّح أن الجلسة الحالية تجريبية ويقود لإنشاء حساب حقيقي. */
+function GuestBar() {
+  const [isGuest, setIsGuest] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void supabase.auth.getUser().then(({ data }) => {
+      if (alive) setIsGuest(data.user?.email === GUEST_EMAIL);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (!isGuest) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-amber/15 px-5 py-3">
+      <p className="text-sm font-bold">
+        أنت في وضع التجربة — العمل هنا مشترك ولن يُحفظ باسمك.
+      </p>
+      <Link
+        to="/auth"
+        search={{ mode: "signup" }}
+        className="rounded-full bg-foreground px-4 py-1.5 text-xs font-bold text-background"
+      >
+        أنشئ حسابك المجاني
+      </Link>
+    </div>
+  );
+}
+
 export function AppShell({
+
   title,
   lead,
   actions,
@@ -220,7 +255,9 @@ export function AppShell({
             </div>
           </div>
         </header>
+        <GuestBar />
         <main className={padded ? "px-5 py-7" : ""}>{children}</main>
+
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ import { Check, Minus } from "lucide-react";
 
 import { PageShell, PageHero, CtaBand } from "@/components/site/PageShell";
 import { Reveal } from "@/components/Reveal";
+import { plans, priceOf } from "@/data/pricing";
+
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -25,54 +27,8 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const plans = [
-  {
-    id: "start",
-    name: "البداية",
-    price: "149",
-    tag: "لصاحب مشروع يبدأ وحده",
-    highlight: false,
-    perks: [
-      "موظف رقمي واحد تختاره",
-      "٣ حسابات مرتبطة",
-      "٦٠ مهمة شهرياً",
-      "توليد صور بنص عربي",
-      "تقرير أسبوعي",
-      "دعم بالبريد خلال ٢٤ ساعة",
-    ],
-  },
-  {
-    id: "growth",
-    name: "النمو",
-    price: "399",
-    tag: "الأكثر اختياراً للمشاريع النامية",
-    highlight: true,
-    perks: [
-      "الفريق الستة كاملاً",
-      "حسابات غير محدودة",
-      "١٠٠٠ مهمة شهرياً",
-      "مسارات عمل تلقائية بين الموظفين",
-      "صندوق موحّد للعملاء",
-      "ذاكرة علامة تجارية متقدمة",
-      "دعم أولوية خلال ٣ ساعات",
-    ],
-  },
-  {
-    id: "scale",
-    name: "المؤسسات",
-    price: "حسب الطلب",
-    tag: "لفرق متعددة الفروع والعلامات",
-    highlight: false,
-    perks: [
-      "علامات وفروع متعددة",
-      "صلاحيات وأدوار للفريق",
-      "مهام غير محدودة",
-      "سجل تدقيق كامل واتفاقية مستوى خدمة",
-      "مدير حساب مخصص",
-      "تدريب الفريق وإعداد أولي",
-    ],
-  },
-];
+// الباقات مصدرها ملف واحد مشترك مع قسم الأسعار في الصفحة الرئيسية.
+
 
 const matrix: { f: string; v: (boolean | string)[] }[] = [
   { f: "عدد الموظفين الرقميين", v: ["1", "6", "6+"] },
@@ -123,11 +79,14 @@ function PricingPage() {
                   <h2 className="font-display text-2xl font-black">{p.name}</h2>
                   <p className="mt-1 text-sm text-muted-foreground">{p.tag}</p>
                   <div className="mt-6 flex items-end gap-2">
-                    <span className="font-display text-4xl font-black text-primary">{p.price}</span>
-                    {p.price !== "حسب الطلب" ? (
+                    <span className="font-display text-4xl font-black text-primary">
+                      {priceOf(p, false)}
+                    </span>
+                    {p.monthly !== null ? (
                       <span className="pb-1 text-sm text-muted-foreground">ريال / شهرياً</span>
                     ) : null}
                   </div>
+
                   <ul className="mt-6 space-y-3">
                     {p.perks.map((k) => (
                       <li key={k} className="flex items-start gap-2.5">
@@ -138,16 +97,27 @@ function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    to={p.id === "scale" ? "/contact" : "/app"}
-                    className={
-                      p.highlight
-                        ? "mt-8 block rounded-full bg-foreground py-3.5 text-center font-bold text-background transition-transform duration-300 hover:-translate-y-1"
-                        : "mt-8 block rounded-full border border-border py-3.5 text-center font-bold transition-colors hover:bg-secondary"
-                    }
-                  >
-                    {p.id === "scale" ? "تحدّث مع المبيعات" : "ابدأ ١٤ يوماً مجاناً"}
-                  </Link>
+                  {p.id === "scale" ? (
+                    <Link
+                      to="/contact"
+                      className="mt-8 block rounded-full border border-border py-3.5 text-center font-bold transition-colors hover:bg-secondary"
+                    >
+                      {p.cta}
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      search={{ mode: "signup", plan: p.id }}
+                      className={
+                        p.highlight
+                          ? "mt-8 block rounded-full bg-foreground py-3.5 text-center font-bold text-background transition-transform duration-300 hover:-translate-y-1"
+                          : "mt-8 block rounded-full border border-border py-3.5 text-center font-bold transition-colors hover:bg-secondary"
+                      }
+                    >
+                      {p.cta}
+                    </Link>
+                  )}
+
                 </div>
               </div>
             </Reveal>

@@ -1,48 +1,10 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { plans, priceOf } from "@/data/pricing";
 import { cn } from "@/lib/utils";
 
-const plans = [
-  {
-    name: "البداية",
-    monthly: 0,
-    tag: "مجاني للأبد",
-    desc: "لتجربة الفريق على مشروع واحد.",
-    features: ["موظف واحد", "منصتان للنشر", "30 مهمة شهرياً", "مراجعة يدوية قبل النشر"],
-    cta: "ابدأ الآن",
-    highlight: false,
-  },
-  {
-    name: "النمو",
-    monthly: 149,
-    tag: "الأكثر اختياراً",
-    desc: "لصاحب مشروع يريد فريقاً كاملاً.",
-    features: [
-      "6 موظفين مفعّلين",
-      "7 منصات نشر",
-      "1,500 مهمة شهرياً",
-      "توليد صور وفيديو قصير",
-      "رصيد يترحّل للشهر التالي",
-    ],
-    cta: "جرّب 14 يوم مجاناً",
-    highlight: true,
-  },
-  {
-    name: "الوكالات",
-    monthly: 399,
-    tag: "متعدد العملاء",
-    desc: "لإدارة عدة علامات تجارية.",
-    features: [
-      "علامات تجارية غير محدودة",
-      "مهام غير محدودة عملياً",
-      "صلاحيات فريق وتقارير بعلامتك",
-      "مدير حساب مخصص",
-    ],
-    cta: "تواصل معنا",
-    highlight: false,
-  },
-];
 
 export function Pricing() {
   const [yearly, setYearly] = useState(true);
@@ -80,7 +42,7 @@ export function Pricing() {
 
         <div className="mt-12 grid items-start gap-5 md:grid-cols-3">
           {plans.map((p, i) => {
-            const price = p.monthly === 0 ? 0 : yearly ? Math.round(p.monthly * 0.8) : p.monthly;
+            const price = priceOf(p, yearly);
             return (
               <Reveal key={p.name} delay={i * 90}>
                 <article
@@ -127,24 +89,41 @@ export function Pricing() {
                         p.highlight ? "text-background/70" : "text-muted-foreground",
                       )}
                     >
-                      ر.س / شهرياً
+                      {p.monthly === null ? "" : "ر.س / شهرياً"}
                     </span>
                   </div>
 
-                  <a
-                    href="#cta"
-                    className={cn(
-                      "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
-                      p.highlight
-                        ? "bg-background text-foreground"
-                        : "bg-foreground text-background",
-                    )}
-                  >
-                    {p.cta}
-                  </a>
+                  {p.id === "scale" ? (
+                    <Link
+                      to="/contact"
+                      className={cn(
+                        "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
+                        p.highlight
+                          ? "bg-background text-foreground"
+                          : "bg-foreground text-background",
+                      )}
+                    >
+                      {p.cta}
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      search={{ mode: "signup", plan: p.id }}
+                      className={cn(
+                        "mt-6 block rounded-full py-3 text-center font-bold transition-transform duration-300 hover:-translate-y-0.5",
+                        p.highlight
+                          ? "bg-background text-foreground"
+                          : "bg-foreground text-background",
+                      )}
+                    >
+                      {p.cta}
+                    </Link>
+                  )}
+
 
                   <ul className="mt-7 space-y-3">
-                    {p.features.map((f) => (
+                    {p.perks.map((f) => (
+
                       <li key={f} className="flex items-start gap-2.5">
                         <Check
                           className={cn(

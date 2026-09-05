@@ -21,11 +21,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { signIn } from "@/lib/auth";
 import { GUEST_EMAIL } from "@/lib/guest.functions";
 import { createAccount } from "@/lib/signup.functions";
+import { plans } from "@/data/pricing";
+
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   mode: z.enum(["signup", "signin"]).default("signup").optional(),
+  /** الباقة القادمة من صفحة الأسعار — تُعرض للمستخدم ولا تُلزمه بالدفع الآن. */
+  plan: z.enum(["start", "growth"]).optional(),
 });
+
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
@@ -216,6 +221,8 @@ function AuthPage() {
   }
 
   const isSignup = mode === "signup";
+  const chosenPlan = plans.find((p) => p.id === search.plan);
+
 
   return (
     <PageShell>
@@ -230,8 +237,21 @@ function AuthPage() {
       />
 
       <section className="mx-auto max-w-2xl px-5 pb-24">
+        {isSignup && chosenPlan ? (
+          <Reveal>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-secondary/60 px-5 py-4">
+              <p className="text-sm font-bold">
+                اخترت باقة «{chosenPlan.name}» — تبدأ بـ ١٤ يوماً مجاناً بدون بطاقة.
+              </p>
+              <Link to="/pricing" className="text-sm font-bold text-primary">
+                غيّر الباقة
+              </Link>
+            </div>
+          </Reveal>
+        ) : null}
         <Reveal>
           <div className="rounded-3xl border border-border bg-card p-6 shadow-card md:p-8">
+
             <div className="mb-6 grid grid-cols-2 gap-1 rounded-2xl bg-secondary p-1">
               {(
                 [
