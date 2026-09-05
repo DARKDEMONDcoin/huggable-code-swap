@@ -1,0 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+import { runAutopilotRow } from "@/lib/autopilot.server";
+const admin = createClient<Database>(process.env["SUPABASE_URL"]!, process.env["SUPABASE_SERVICE_ROLE_KEY"]!, { auth: { persistSession: false } });
+const { data: ws } = await admin.from("workspaces").select("id").limit(1).single();
+const wsId = ws!.id;
+await admin.from("pipedream_accounts").insert({ workspace_id: wsId, provider: "linkedin", app_slug: "linkedin", account_id: "test_dryrun", account_name: "QA", status: "connected" } as never);
+const { data: row } = await admin.from("social_autopilot").select("*").eq("workspace_id", wsId).single();
+const rep = await runAutopilotRow(admin, row!, new Date());
+console.log("run:", rep);
+const { data: t } = await admin.from("tasks").select("title,status,output").eq("workspace_id", wsId).order("created_at", { ascending: false }).limit(1).single();
+console.log("task:", t!.title, t!.status, "| chars:", t!.output?.length, "|", t!.output?.slice(0, 200).replace(/\n/g, " "));
+await admin.from("pipedream_accounts").delete().eq("account_id", "test_dryrun");
+console.log("cleaned");
