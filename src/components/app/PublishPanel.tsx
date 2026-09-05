@@ -66,8 +66,19 @@ export function PublishPanel({
     [accounts],
   );
 
-  const [provider, setProvider] = useState<string>("");
-  const active = provider || (connected.includes(channel as never) ? channel : connected[0]) || "";
+  // اختيار متعدد مثل مدير التواصل الاحترافي: منشور واحد يخرج على كل المنصات المختارة.
+  const [picked, setPicked] = useState<string[] | null>(null);
+  const active = useMemo(() => {
+    if (picked) return picked.filter((p) => connected.includes(p as never));
+    const preferred = connected.includes(channel as never) ? channel : connected[0];
+    return preferred ? [preferred] : [];
+  }, [picked, connected, channel]);
+
+  const toggle = (p: string) =>
+    setPicked((prev) => {
+      const base = prev ?? active;
+      return base.includes(p) ? base.filter((x) => x !== p) : [...base, p];
+    });
 
   const [when, setWhen] = useState(() => localInputValue(new Date(Date.now() + 3_600_000)));
   const [busy, setBusy] = useState<"now" | "later" | null>(null);
@@ -83,33 +94,62 @@ export function PublishPanel({
     onPublished?.();
   };
 
+  /** يقترح أفضل موعد نشر للمنصة الأولى المختارة. */
+  const suggestBestTime = () => {
+    const target = active[0];
+    if (!target) return;
+    const at = bestTimeFor(target);
+    setWhen(localInputValue(at));
+    setNote(`أفضل وقت مقترح لـ${appLabel(target)}: ${at.toLocaleString("ar-EG")}`);
+  };
+
   const run = async (mode: "now" | "later") => {
+    if (!active.length) return;
     setBusy(mode);
     setNote(null);
-    const base = {
-      workspaceId,
-      employeeId,
-      taskId: taskId ?? null,
-      provider: active,
-      body: text,
-      imageUrl: imageUrl ?? null,
-    };
-    try {
-      if (mode === "now") {
-        await publishSocialNow({ data: base });
-        done(`تم النشر على ${appLabel(active)} ✅`);
-      } else {
-        const at = new Date(when);
-        if (Number.isNaN(at.getTime())) throw new Error("موعد غير صالح.");
-        await scheduleSocialPost({ data: { ...base, scheduledAt: at.toISOString() } });
-        done(`تمت الجدولة على ${appLabel(active)} في ${at.toLocaleString("ar-EG")} ⏱`);
-      }
-    } catch (e) {
-      setNote(e instanceof Error ? e.message : "تعذّر تنفيذ الطلب.");
-    } finally {
+
+    const at = mode === "later" ? new Date(when) : null;
+    if (at && Number.isNaN(at.getTime())) {
+      setNote("موعد غير صالح.");
       setBusy(null);
+      return;
     }
+
+    const ok: string[] = [];
+    const failed: string[] = [];
+
+    for (const provider of active) {
+      // إنستجرام لا يقبل منشوراً بلا صورة — نوضّح السبب بدل فشل غامض.
+      if (provider === "instagram" && !imageUrl) {
+        failed.push(`${appLabel(provider)}: يحتاج صورة`);
+        continue;
+      }
+      const base = {
+        workspaceId,
+        employeeId,
+        taskId: taskId ?? null,
+        provider,
+        body: adaptForProvider(provider, text),
+        imageUrl: imageUrl ?? null,
+      };
+      try {
+        if (at) await scheduleSocialPost({ data: { ...base, scheduledAt: at.toISOString() } });
+        else await publishSocialNow({ data: base });
+        ok.push(appLabel(provider));
+      } catch (e) {
+        failed.push(`${appLabel(provider)}: ${e instanceof Error ? e.message : "تعذّر التنفيذ"}`);
+      }
+    }
+
+    const head = ok.length
+      ? at
+        ? `تمت الجدولة على ${ok.join("، ")} في ${at.toLocaleString("ar-EG")} ⏱`
+        : `تم النشر على ${ok.join("، ")} ✅`
+      : "";
+    done([head, ...failed].filter(Boolean).join("\n"));
+    setBusy(null);
   };
+
 
   if (isLoading) {
     return (
