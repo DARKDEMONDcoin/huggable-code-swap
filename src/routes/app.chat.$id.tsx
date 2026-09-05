@@ -179,6 +179,8 @@ function ChatPage() {
     const body = text.trim();
     if (!body || !workspace || busy) return;
     setError(null);
+    setSavedTask(false);
+
     setDraft("");
     setPending(body);
     send.mutate(body);
