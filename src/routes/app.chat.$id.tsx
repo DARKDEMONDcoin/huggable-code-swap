@@ -85,12 +85,17 @@ function ChatPage() {
   const send = useMutation({
     mutationFn: (message: string) =>
       ask({ data: { workspaceId: workspace!.id, employeeId: id, message } }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
+      setPending(null);
       void qc.invalidateQueries({ queryKey: ["messages-last", workspace?.id] });
       void qc.invalidateQueries({ queryKey: ["tasks", workspace?.id] });
     },
-    onError: (e: unknown) => setError(e instanceof Error ? e.message : "تعذّر إرسال الطلب"),
+    onError: (e: unknown) => {
+      setPending(null);
+      setError(e instanceof Error ? e.message : "تعذّر إرسال الطلب");
+    },
+
   });
 
   const skillRun = useMutation({
