@@ -59,30 +59,52 @@ export function nextSlot(hours: number[], from: Date = new Date()): Date {
   return first;
 }
 
-/** يستخرج نص المنشور النهائي والهاشتاقات ووصف الصورة من مخرج القدرة. */
-export function extractPost(output: string): { caption: string; imagePrompt: string | null } {
+/** أي سطر يمثّل عنوان قسم في مخرجات سِراج (**عنوان** أو ترقيم أو فاصل). */
+function isHeading(line: string): boolean {
+  return /^\s*(#{1,6}\s|\d[).]\s|-{3,}\s*$|\*\*[^*]{1,60}\*\*\s*:?\s*$)/.test(line);
+}
+
+/**
+ * عناوين أقسام «ورقة العمل» التي تلي المنشور — عندها فقط نتوقف.
+ * أي عنوان عريض آخر (مثل «الحل:») جزء من نص المنشور نفسه ولا يقطعه.
+ */
+const STOP_LABELS =
+  /هاشتاق|وصف الصورة|نص بديل|\balt\b|أفضل وقت|السبب|مقياس|ملاحظ|بدائل|هوك|المصادر|توزيع|تنويه|جدول/i;
+
+function isStop(line: string): boolean {
+  return isHeading(line) && (STOP_LABELS.test(line) || /^\s*(-{3,}\s*$|\d[).]\s)/.test(line));
+}
+
+/** يستخرج نص المنشور والهاشتاقات ووصف/رابط الصورة من مخرج القدرة. */
+export function extractPost(output: string): {
+  caption: string;
+  imagePrompt: string | null;
+  imageUrl: string | null;
+} {
   const clean = (t: string) =>
     t
       .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
-      .replace(/^#{1,6}\s*/gm, "")
+      .replace(/^#{1,6}\s+/gm, "")
       .replace(/\*\*/g, "")
-      .replace(/^\s*\d\)\s*/gm, "")
+      .replace(/^\s*\d[).]\s*/gm, "")
+      .replace(/\n{3,}/g, "\n\n")
       .trim();
 
+  const lines = output.split("\n");
   const section = (label: RegExp): string | null => {
-    const lines = output.split("\n");
-    const start = lines.findIndex((l) => label.test(l));
+    const start = lines.findIndex((l) => isHeading(l) && label.test(l));
     if (start === -1) return null;
     const body: string[] = [];
     for (let i = start + 1; i < lines.length; i += 1) {
       const line = lines[i]!;
-      if (/^\s*(\d\)|#{1,6}\s|\*\*\d)/.test(line) && body.join("").trim()) break;
+      if (isStop(line)) break;
       body.push(line);
     }
     return clean(body.join("\n")) || null;
   };
 
-  const main = section(/نص المنشور/);
+
+  const main = section(/نص المنشور|المنشور النهائي|الكابشن/);
   const tags = section(/هاشتاق/);
   const imagePrompt = section(/وصف الصورة/);
 
@@ -90,8 +112,27 @@ export function extractPost(output: string): { caption: string; imagePrompt: str
     ? [...new Set(tags.match(/#[\p{L}\p{N}_]+/gu) ?? [])].slice(0, 15).join(" ")
     : "";
 
+  // الصورة المولّدة داخل القدرة نفسها — نعيد استخدامها بدل توليد صورة ثانية.
+  const imageUrl = output.match(/!\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/)?.[1] ?? null;
+
   const caption = [main ?? clean(output).slice(0, 1800), hashtags].filter(Boolean).join("\n\n");
-  return { caption: caption.slice(0, 2200), imagePrompt: imagePrompt?.slice(0, 400) ?? null };
+  return {
+    caption: caption.slice(0, 2200),
+    imagePrompt: imagePrompt?.slice(0, 400) ?? null,
+    imageUrl,
+  };
+}
+
+
+/** نسخة مختصرة تناسب حدّ إكس (٢٨٠ حرفاً) وتنتهي عند جملة كاملة مع أهم هاشتاقين. */
+export function shortForX(caption: string): string {
+  const tags = (caption.match(/#[\p{L}\p{N}_]+/gu) ?? []).slice(0, 2).join(" ");
+  const text = caption.replace(/#[\p{L}\p{N}_]+/gu, "").replace(/\n{2,}/g, "\n").trim();
+  const budget = 275 - (tags ? tags.length + 1 : 0);
+  if (text.length <= budget) return [text, tags].filter(Boolean).join("\n");
+  const cut = text.slice(0, budget);
+  const stop = Math.max(cut.lastIndexOf("."), cut.lastIndexOf("!"), cut.lastIndexOf("؟"), cut.lastIndexOf("\n"));
+  return [(stop > 80 ? cut.slice(0, stop + 1) : cut).trim(), tags].filter(Boolean).join("\n");
 }
 
 /** رفض دائم من مزوّد الذكاء (رصيد/سياسة) — يوقف الطيار بدل تكرار المحاولة. */
@@ -161,11 +202,12 @@ export async function runAutopilotRow(
       origin: "الطيار الآلي",
     });
 
-    const { caption, imagePrompt } = extractPost(run.output);
+    const { caption, imagePrompt, imageUrl: fromOutput } = extractPost(run.output);
     if (!caption.trim()) throw new Error("لم يخرج نص منشور صالح.");
 
-    let imageUrl: string | null = null;
-    if (row.with_image) {
+    // القدرة نفسها قد تولّد الصورة — نعيد استخدامها ولا نولّد صورة ثانية بلا داعٍ.
+    let imageUrl: string | null = row.with_image ? fromOutput : null;
+    if (row.with_image && !imageUrl) {
       try {
         const { ownedHeroImage, heroPrompt } = await import("./image-gen.server");
         imageUrl = await ownedHeroImage(
@@ -177,6 +219,7 @@ export async function runAutopilotRow(
         console.error("[autopilot] image failed:", e);
       }
     }
+
 
     // وضع المراجعة: المهمة أُنشئت بالفعل داخل executeSkill بحالة «بانتظار الاعتماد».
     if (row.mode !== "auto") {
@@ -192,8 +235,10 @@ export async function runAutopilotRow(
         employee_id: row.employee_id,
         task_id: run.taskId,
         provider,
-        body: caption,
+        // إكس يقصّ ما بعد ٢٨٠ حرفاً — نجهّز نسخة مختصرة تنتهي عند جملة كاملة.
+        body: provider === "x" ? shortForX(caption) : caption,
         image_url: imageUrl,
+
         scheduled_at: now.toISOString(),
         status: "scheduled",
       }));

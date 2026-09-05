@@ -101,9 +101,14 @@ async function call<T>(
   if (!res.ok) {
     console.error(`[pipedream] ${path} [${res.status}]: ${text.slice(0, 400)}`);
     if (res.status === 429) throw new Error("Pipedream مشغول مؤقتاً — أعد المحاولة بعد قليل.");
+    // حساب مفقود لدى الوسيط = ربط قديم أو ملغى — نوضّحه بلغة المستخدم.
+    if (text.includes("Auth provision not found")) {
+      throw new Error("الحساب لم يعد مربوطاً — أعد ربطه من صفحة التكاملات ثم أعد المحاولة.");
+    }
     // طلبات الوكيل تنقل خطأ المنصة نفسها، لا خطأ الوسيط — نوضّح ذلك للمستخدم.
     const source = path.startsWith("/proxy/") ? "المنصة رفضت الطلب" : "الوسيط رفض الطلب";
     throw new Error(`${source} [${res.status}]: ${text.slice(0, 200)}`);
+
   }
   return (text ? JSON.parse(text) : {}) as T;
 }
