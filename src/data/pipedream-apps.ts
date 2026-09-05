@@ -88,6 +88,8 @@ export const pipedreamApps: PipedreamApp[] = [
     provider: "pinterest",
     slug: "pinterest",
     label: "بينترست",
+    publishComponent: "pinterest-create-pin",
+    accountProp: "pinterest",
     actions: {
       createPin: { component: "pinterest-create-pin", accountProp: "pinterest", label: "إنشاء بِن" },
     },

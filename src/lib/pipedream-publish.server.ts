@@ -155,6 +155,8 @@ function textProps(provider: string, text: string): Record<string, string> {
       return { text };
     case "gmail":
       return { body: text };
+    case "pinterest":
+      return { title: text.split("\n")[0]!.slice(0, 90), description: text.slice(0, 480) };
     default:
       return { text };
   }
@@ -166,6 +168,8 @@ function imageProps(provider: string, imageUrl: string): Record<string, string> 
       return { mediaType: "image", imageUrl };
     case "facebook":
       return { link: imageUrl };
+    case "pinterest":
+      return { imageUrl, mediaSource: imageUrl };
     default:
       return { imageUrl };
   }
