@@ -97,16 +97,27 @@ function PricingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    to={p.id === "scale" ? "/contact" : "/app"}
-                    className={
-                      p.highlight
-                        ? "mt-8 block rounded-full bg-foreground py-3.5 text-center font-bold text-background transition-transform duration-300 hover:-translate-y-1"
-                        : "mt-8 block rounded-full border border-border py-3.5 text-center font-bold transition-colors hover:bg-secondary"
-                    }
-                  >
-                    {p.id === "scale" ? "تحدّث مع المبيعات" : "ابدأ ١٤ يوماً مجاناً"}
-                  </Link>
+                  {p.id === "scale" ? (
+                    <Link
+                      to="/contact"
+                      className="mt-8 block rounded-full border border-border py-3.5 text-center font-bold transition-colors hover:bg-secondary"
+                    >
+                      {p.cta}
+                    </Link>
+                  ) : (
+                    <Link
+                      to="/auth"
+                      search={{ mode: "signup", plan: p.id }}
+                      className={
+                        p.highlight
+                          ? "mt-8 block rounded-full bg-foreground py-3.5 text-center font-bold text-background transition-transform duration-300 hover:-translate-y-1"
+                          : "mt-8 block rounded-full border border-border py-3.5 text-center font-bold transition-colors hover:bg-secondary"
+                      }
+                    >
+                      {p.cta}
+                    </Link>
+                  )}
+
                 </div>
               </div>
             </Reveal>
