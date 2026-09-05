@@ -13,14 +13,21 @@ type Admin = SupabaseClient<Database>;
 export type AutopilotRow = Database["public"]["Tables"]["social_autopilot"]["Row"];
 
 /** أقصى عدد مساحات عمل في التشغيلة الواحدة. */
-const BATCH = 5;
+const BATCH = 25;
 /** مدة الحجز: صف محجوز أقدم من هذا يُعتبر عالقاً ويُعاد التقاطه. */
 const LOCK_MS = 15 * 60 * 1000;
 /** أقصى عدد منصات في المنشور الواحد — سقف يمنع أي انفجار في عدد الطلبات. */
-const MAX_PROVIDERS = 4;
+const MAX_PROVIDERS = 12;
 
 /** المنصات التي يدعمها النشر المباشر اليوم. */
-export const AUTOPILOT_PROVIDERS = ["instagram", "facebook", "linkedin", "x"] as const;
+export const AUTOPILOT_PROVIDERS = [
+  "instagram",
+  "facebook",
+  "linkedin",
+  "x",
+  "pinterest",
+  "youtube",
+] as const;
 
 /** زوايا محتوى تتناوب يوماً بعد يوم حتى لا يتكرر المنشور نفسه. */
 const ANGLES = [
@@ -40,23 +47,102 @@ export type AutopilotReport = {
   note?: string;
 };
 
-/** الموعد التالي: أقرب ساعة قادمة من الساعات المختارة (بتوقيت UTC). */
-export function nextSlot(hours: number[], from: Date = new Date()): Date {
-  const list = [...new Set(hours.filter((h) => Number.isInteger(h) && h >= 0 && h <= 23))].sort(
-    (a, b) => a - b,
-  );
-  const safe = list.length ? list : [9];
-  const next = new Date(from);
-  next.setUTCMinutes(0, 0, 0);
-  for (const hour of safe) {
-    const candidate = new Date(next);
-    candidate.setUTCHours(hour);
-    if (candidate > from) return candidate;
+/** إعدادات التوقيت الحرّة: مواعيد بالساعة والدقيقة + أيام أسبوع + منطقة زمنية. */
+export type Timing = {
+  slots?: string[] | null;
+  days?: number[] | null;
+  timezone?: string | null;
+  hours?: number[] | null;
+};
+
+/** فرق المنطقة الزمنية بالدقائق عن UTC في لحظة معيّنة (يراعي التوقيت الصيفي). */
+function offsetMinutes(timeZone: string, at: Date): number {
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour12: false,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).formatToParts(at);
+    const get = (t: string) => Number(parts.find((p) => p.type === t)?.value ?? "0");
+    const asUtc = Date.UTC(
+      get("year"),
+      get("month") - 1,
+      get("day"),
+      get("hour") % 24,
+      get("minute"),
+      get("second"),
+    );
+    return Math.round((asUtc - at.getTime()) / 60000);
+  } catch {
+    return 0;
   }
-  const first = new Date(next);
-  first.setUTCDate(first.getUTCDate() + 1);
-  first.setUTCHours(safe[0]!);
-  return first;
+}
+
+/** أجزاء التاريخ المحلي (سنة/شهر/يوم/يوم الأسبوع) في منطقة زمنية. */
+function localParts(timeZone: string, at: Date) {
+  const shifted = new Date(at.getTime() + offsetMinutes(timeZone, at) * 60000);
+  return {
+    y: shifted.getUTCFullYear(),
+    m: shifted.getUTCMonth(),
+    d: shifted.getUTCDate(),
+    dow: shifted.getUTCDay(),
+  };
+}
+
+/** يحوّل "HH:MM" إلى دقائق، ويتجاهل أي صيغة غير صالحة. */
+function parseSlot(slot: string): number | null {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(slot.trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h < 0 || h > 23 || min < 0 || min > 59) return null;
+  return h * 60 + min;
+}
+
+/** يوحّد الإعدادات: مواعيد بالدقيقة، أيام مسموحة، منطقة زمنية صالحة. */
+export function normalizeTiming(t: Timing) {
+  const fromSlots = (t.slots ?? []).map(parseSlot).filter((v): v is number => v !== null);
+  const fromHours = (t.hours ?? [])
+    .map(Number)
+    .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23)
+    .map((h) => h * 60);
+  const minutes = [...new Set(fromSlots.length ? fromSlots : fromHours)].sort((a, b) => a - b);
+  const days = [...new Set((t.days ?? []).map(Number).filter((d) => d >= 0 && d <= 6))].sort();
+  return {
+    minutes: minutes.length ? minutes : [9 * 60],
+    days: days.length ? days : [0, 1, 2, 3, 4, 5, 6],
+    timezone: t.timezone?.trim() || "Asia/Riyadh",
+  };
+}
+
+/**
+ * الموعد التالي بالضبط: أقرب وقت قادم من المواعيد المختارة، في يوم مسموح،
+ * محسوباً بالمنطقة الزمنية التي اختارها صاحب العلامة.
+ */
+export function nextRun(timing: Timing, from: Date = new Date()): Date {
+  const { minutes, days, timezone } = normalizeTiming(timing);
+  for (let add = 0; add <= 14; add += 1) {
+    const base = new Date(from.getTime() + add * 86_400_000);
+    const { y, m, d } = localParts(timezone, base);
+    for (const mins of minutes) {
+      const guess = Date.UTC(y, m, d, Math.floor(mins / 60), mins % 60);
+      const candidate = new Date(guess - offsetMinutes(timezone, new Date(guess)) * 60000);
+      if (candidate <= from) continue;
+      if (!days.includes(localParts(timezone, candidate).dow)) continue;
+      return candidate;
+    }
+  }
+  return new Date(from.getTime() + 86_400_000);
+}
+
+/** توافقية: الحساب القديم بالساعات UTC. */
+export function nextSlot(hours: number[], from: Date = new Date()): Date {
+  return nextRun({ hours, timezone: "UTC" }, from);
 }
 
 /** أي سطر يمثّل عنوان قسم في مخرجات سِراج (**عنوان** أو ترقيم أو فاصل). */
@@ -141,13 +227,18 @@ export async function runAutopilotRow(
   row: AutopilotRow,
   now: Date = new Date(),
 ): Promise<AutopilotReport> {
-  const hours = (row.hours ?? []).map(Number);
+  const timing: Timing = {
+    slots: (row as { slots?: string[] | null }).slots ?? null,
+    days: (row as { days?: number[] | null }).days ?? null,
+    timezone: (row as { timezone?: string | null }).timezone ?? null,
+    hours: (row.hours ?? []).map(Number),
+  };
   const finish = async (patch: Record<string, unknown>) => {
     await admin
       .from("social_autopilot")
       .update({
         last_run_at: now.toISOString(),
-        next_run_at: nextSlot(hours, now).toISOString(),
+        next_run_at: nextRun(timing, now).toISOString(),
         locked_at: null,
         ...patch,
       })

@@ -28,18 +28,28 @@ export const Route = createFileRoute("/app/autopilot")({
   component: AutopilotPage,
 });
 
-const PROVIDERS = ["instagram", "facebook", "linkedin", "x"] as const;
+const PROVIDERS = ["instagram", "facebook", "linkedin", "x", "pinterest", "youtube"] as const;
 const DIALECTS = ["خليجية", "مصرية", "شامية", "مغربية", "فصحى"] as const;
-/** ساعات النشر تُعرض بتوقيت مكة (UTC+3) وتُخزّن بـUTC. */
-const OFFSET = 3;
-const SLOT_HOURS = [8, 12, 15, 18, 21] as const;
+const DAY_NAMES = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"] as const;
+/** مناطق زمنية شائعة للمنطقة العربية + خيار توقيت الجهاز. */
+const ZONES = [
+  "Asia/Riyadh",
+  "Africa/Cairo",
+  "Asia/Dubai",
+  "Asia/Qatar",
+  "Asia/Kuwait",
+  "Asia/Baghdad",
+  "Asia/Amman",
+  "Asia/Beirut",
+  "Africa/Casablanca",
+  "Africa/Tunis",
+  "Africa/Algiers",
+  "Europe/Istanbul",
+  "Europe/London",
+  "America/New_York",
+  "UTC",
+] as const;
 
-function toLocal(utcHour: number) {
-  return (utcHour + OFFSET + 24) % 24;
-}
-function toUtc(localHour: number) {
-  return (localHour - OFFSET + 24) % 24;
-}
 
 function AutopilotPage() {
   const { data: workspace } = useWorkspace();
@@ -56,7 +66,10 @@ function AutopilotPage() {
   const [providers, setProviders] = useState<string[]>([]);
   const [brief, setBrief] = useState("");
   const [dialect, setDialect] = useState<string>("خليجية");
-  const [hours, setHours] = useState<number[]>([9]);
+  const [slots, setSlots] = useState<string[]>(["09:00"]);
+  const [days, setDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [timezone, setTimezone] = useState<string>("Asia/Riyadh");
+  const [newSlot, setNewSlot] = useState("12:00");
   const [mode, setMode] = useState<"auto" | "review">("review");
   const [withImage, setWithImage] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +82,14 @@ function AutopilotPage() {
     setProviders(row.providers ?? []);
     setBrief(row.brief ?? "");
     setDialect(row.dialect ?? "خليجية");
-    setHours((row.hours ?? [9]).map(Number));
+    const saved = (row as { slots?: string[] | null }).slots ?? [];
+    setSlots(
+      saved.length
+        ? saved
+        : (row.hours ?? [9]).map((h) => `${String((Number(h) + 3) % 24).padStart(2, "0")}:00`),
+    );
+    setDays(((row as { days?: number[] | null }).days ?? [0, 1, 2, 3, 4, 5, 6]).map(Number));
+    setTimezone((row as { timezone?: string | null }).timezone ?? "Asia/Riyadh");
     setMode(row.mode === "auto" ? "auto" : "review");
     setWithImage(row.with_image);
   }, [row]);
@@ -83,8 +103,9 @@ function AutopilotPage() {
           providers,
           brief,
           dialect,
-          postsPerDay: Math.max(1, Math.min(3, hours.length)),
-          hours,
+          slots: slots.length ? slots : ["09:00"],
+          days: days.length ? days : [0, 1, 2, 3, 4, 5, 6],
+          timezone,
           mode,
           withImage,
         },
@@ -114,17 +135,15 @@ function AutopilotPage() {
 
   const connected = new Set((accounts ?? []).map((a) => a.provider));
   const toggleProvider = (p: string) =>
-    setProviders((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p].slice(0, 4)));
-  const toggleHour = (localHour: number) => {
-    const utc = toUtc(localHour);
-    setHours((list) =>
-      list.includes(utc)
-        ? list.length > 1
-          ? list.filter((h) => h !== utc)
-          : list
-        : [...list, utc].slice(0, 3).sort((a, b) => a - b),
-    );
+    setProviders((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p]));
+  const addSlot = (value: string) => {
+    if (!/^\d{1,2}:\d{2}$/.test(value)) return;
+    setSlots((list) => (list.includes(value) ? list : [...list, value].sort()));
   };
+  const removeSlot = (value: string) => setSlots((list) => list.filter((s) => s !== value));
+  const toggleDay = (d: number) =>
+    setDays((list) => (list.includes(d) ? list.filter((x) => x !== d) : [...list, d].sort()));
+
 
   const busy = save.isPending || runNow.isPending;
 
@@ -163,7 +182,7 @@ function AutopilotPage() {
                       weekday: "long",
                       hour: "2-digit",
                       minute: "2-digit",
-                      timeZone: "Asia/Riyadh",
+                      timeZone: timezone,
                     })}
                   </p>
                 ) : null}
@@ -247,27 +266,72 @@ function AutopilotPage() {
 
         <section className="rounded-3xl border border-border bg-card p-6">
           <h3 className="font-display text-lg font-black">المواعيد</h3>
-          <p className="mt-1 text-sm text-ink-soft">اختر حتى ٣ مواعيد يومياً (بتوقيت مكة).</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {SLOT_HOURS.map((h) => {
-              const on = hours.includes(toUtc(h));
-              return (
-                <button
-                  key={h}
-                  onClick={() => toggleHour(h)}
-                  className={`rounded-full px-4 py-2 text-sm font-bold ${
-                    on ? "bg-foreground text-background" : "bg-secondary text-ink-soft"
-                  }`}
-                >
-                  {String(h).padStart(2, "0")}:00
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            المختار الآن: {hours.map((h) => `${String(toLocal(h)).padStart(2, "0")}:00`).join(" · ")}
+          <p className="mt-1 text-sm text-ink-soft">
+            أضف أي عدد من المواعيد بأي ساعة ودقيقة تريدها، واختر أيام النشر وتوقيت بلدك — بلا أي قيد.
           </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              type="time"
+              value={newSlot}
+              onChange={(e) => setNewSlot(e.target.value)}
+              className="rounded-2xl border border-border bg-background px-4 py-2 text-sm font-bold outline-none focus:border-foreground"
+            />
+            <button
+              onClick={() => addSlot(newSlot)}
+              className="rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background"
+            >
+              أضف موعداً
+            </button>
+            <label className="ms-auto flex items-center gap-2 text-sm font-bold">
+              التوقيت:
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="rounded-2xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+              >
+                {[...new Set([timezone, ...ZONES])].map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {slots.length ? (
+              slots.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => removeSlot(s)}
+                  title="اضغط للحذف"
+                  className="rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background"
+                >
+                  {s} ×
+                </button>
+              ))
+            ) : (
+              <span className="text-sm text-ink-soft">لم تضف موعداً بعد.</span>
+            )}
+          </div>
+
+          <p className="mt-5 text-sm font-bold">أيام النشر</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {DAY_NAMES.map((name, i) => (
+              <button
+                key={name}
+                onClick={() => toggleDay(i)}
+                className={`rounded-full px-4 py-2 text-sm font-bold ${
+                  days.includes(i) ? "bg-foreground text-background" : "bg-secondary text-ink-soft"
+                }`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
         </section>
+
 
         <section className="rounded-3xl border border-border bg-card p-6">
           <h3 className="font-display text-lg font-black">وضع التشغيل</h3>

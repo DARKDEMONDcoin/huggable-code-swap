@@ -388,6 +388,7 @@ export type Database = {
           active: boolean
           brief: string
           created_at: string
+          days: number[]
           dialect: string
           employee_id: string
           hours: number[]
@@ -400,6 +401,8 @@ export type Database = {
           paused_reason: string | null
           posts_per_day: number
           providers: string[]
+          slots: string[]
+          timezone: string
           updated_at: string
           with_image: boolean
           workspace_id: string
@@ -408,6 +411,7 @@ export type Database = {
           active?: boolean
           brief?: string
           created_at?: string
+          days?: number[]
           dialect?: string
           employee_id?: string
           hours?: number[]
@@ -420,6 +424,8 @@ export type Database = {
           paused_reason?: string | null
           posts_per_day?: number
           providers?: string[]
+          slots?: string[]
+          timezone?: string
           updated_at?: string
           with_image?: boolean
           workspace_id: string
@@ -428,6 +434,7 @@ export type Database = {
           active?: boolean
           brief?: string
           created_at?: string
+          days?: number[]
           dialect?: string
           employee_id?: string
           hours?: number[]
@@ -440,6 +447,8 @@ export type Database = {
           paused_reason?: string | null
           posts_per_day?: number
           providers?: string[]
+          slots?: string[]
+          timezone?: string
           updated_at?: string
           with_image?: boolean
           workspace_id?: string
