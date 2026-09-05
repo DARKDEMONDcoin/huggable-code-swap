@@ -266,27 +266,72 @@ function AutopilotPage() {
 
         <section className="rounded-3xl border border-border bg-card p-6">
           <h3 className="font-display text-lg font-black">المواعيد</h3>
-          <p className="mt-1 text-sm text-ink-soft">اختر حتى ٣ مواعيد يومياً (بتوقيت مكة).</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {SLOT_HOURS.map((h) => {
-              const on = hours.includes(toUtc(h));
-              return (
-                <button
-                  key={h}
-                  onClick={() => toggleHour(h)}
-                  className={`rounded-full px-4 py-2 text-sm font-bold ${
-                    on ? "bg-foreground text-background" : "bg-secondary text-ink-soft"
-                  }`}
-                >
-                  {String(h).padStart(2, "0")}:00
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground">
-            المختار الآن: {hours.map((h) => `${String(toLocal(h)).padStart(2, "0")}:00`).join(" · ")}
+          <p className="mt-1 text-sm text-ink-soft">
+            أضف أي عدد من المواعيد بأي ساعة ودقيقة تريدها، واختر أيام النشر وتوقيت بلدك — بلا أي قيد.
           </p>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <input
+              type="time"
+              value={newSlot}
+              onChange={(e) => setNewSlot(e.target.value)}
+              className="rounded-2xl border border-border bg-background px-4 py-2 text-sm font-bold outline-none focus:border-foreground"
+            />
+            <button
+              onClick={() => addSlot(newSlot)}
+              className="rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background"
+            >
+              أضف موعداً
+            </button>
+            <label className="ms-auto flex items-center gap-2 text-sm font-bold">
+              التوقيت:
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                className="rounded-2xl border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground"
+              >
+                {[...new Set([timezone, ...ZONES])].map((z) => (
+                  <option key={z} value={z}>
+                    {z}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {slots.length ? (
+              slots.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => removeSlot(s)}
+                  title="اضغط للحذف"
+                  className="rounded-full bg-foreground px-4 py-2 text-sm font-bold text-background"
+                >
+                  {s} ×
+                </button>
+              ))
+            ) : (
+              <span className="text-sm text-ink-soft">لم تضف موعداً بعد.</span>
+            )}
+          </div>
+
+          <p className="mt-5 text-sm font-bold">أيام النشر</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {DAY_NAMES.map((name, i) => (
+              <button
+                key={name}
+                onClick={() => toggleDay(i)}
+                className={`rounded-full px-4 py-2 text-sm font-bold ${
+                  days.includes(i) ? "bg-foreground text-background" : "bg-secondary text-ink-soft"
+                }`}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
         </section>
+
 
         <section className="rounded-3xl border border-border bg-card p-6">
           <h3 className="font-display text-lg font-black">وضع التشغيل</h3>
