@@ -103,8 +103,10 @@ function ChatPage() {
   const { data: integrations } = useIntegrations(workspace?.id);
   const [draft, setDraft] = useState("");
   const [pending, setPending] = useState<string | null>(null);
+  const [savedTask, setSavedTask] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
+
   const [showSettings, setShowSettings] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -121,9 +123,10 @@ function ChatPage() {
   const send = useMutation({
     mutationFn: (message: string) =>
       ask({ data: { workspaceId: workspace!.id, employeeId: id, message } }),
-    onSuccess: async () => {
+    onSuccess: async (res) => {
       await qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
       setPending(null);
+      setSavedTask(Boolean(res?.createdTaskId));
       void qc.invalidateQueries({ queryKey: ["messages-last", workspace?.id] });
       void qc.invalidateQueries({ queryKey: ["tasks", workspace?.id] });
     },
@@ -144,13 +147,15 @@ function ChatPage() {
           values: p.values,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      setSavedTask(Boolean(res?.taskId));
       void qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
       void qc.invalidateQueries({ queryKey: ["messages-last", workspace?.id] });
       void qc.invalidateQueries({ queryKey: ["tasks", workspace?.id] });
     },
     onError: (e: unknown) => setError(e instanceof Error ? e.message : "تعذّر تنفيذ المهمة"),
   });
+
 
   const busy = send.isPending || skillRun.isPending;
 
@@ -174,6 +179,8 @@ function ChatPage() {
     const body = text.trim();
     if (!body || !workspace || busy) return;
     setError(null);
+    setSavedTask(false);
+
     setDraft("");
     setPending(body);
     send.mutate(body);
@@ -290,11 +297,24 @@ function ChatPage() {
               </div>
             ) : null}
 
+            {savedTask && !busy ? (
+              <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-jade/12 px-4 py-3 text-sm font-semibold text-jade-deep">
+                تم حفظ المخرج في «الموافقات» بانتظار اعتمادك.
+                <Link
+                  to="/app/approvals"
+                  className="rounded-full bg-jade-deep px-4 py-1.5 text-xs font-bold text-background"
+                >
+                  افتح الموافقات
+                </Link>
+              </div>
+            ) : null}
+
             {error ? (
               <p className="rounded-2xl bg-coral/12 px-4 py-3 text-sm font-semibold text-coral">
                 {error}
               </p>
             ) : null}
+
             <div ref={endRef} />
           </div>
 
