@@ -56,7 +56,32 @@ function ChatMissing() {
   );
 }
 
+/** بعض الردود القديمة محفوظة كنص JSON خام — نحوّلها لعرض مقروء. */
+function prettyBody(body: string): string {
+  const text = body.trim();
+  if (!text.startsWith("{") && !text.startsWith("[")) return body;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    const items = (Array.isArray(parsed) ? parsed : [parsed]) as Array<{
+      reply?: string;
+      deliverable?: { title?: string; body?: string } | null;
+    }>;
+    const parts = items.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      const chunk: string[] = [];
+      if (typeof item.reply === "string" && item.reply.trim()) chunk.push(item.reply.trim());
+      const d = item.deliverable;
+      if (d?.body) chunk.push(`### ${d.title ?? "المخرج"}\n\n${d.body}`);
+      return chunk;
+    });
+    return parts.length ? parts.join("\n\n") : body;
+  } catch {
+    return body;
+  }
+}
+
 function timeOf(iso: string) {
+
   return new Date(iso).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
 }
 
@@ -68,6 +93,8 @@ function ChatPage() {
   const { data: messages } = useMessages(workspace?.id, id);
   const { data: integrations } = useIntegrations(workspace?.id);
   const [draft, setDraft] = useState("");
+  const [pending, setPending] = useState<string | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
@@ -85,12 +112,17 @@ function ChatPage() {
   const send = useMutation({
     mutationFn: (message: string) =>
       ask({ data: { workspaceId: workspace!.id, employeeId: id, message } }),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["messages", workspace?.id, id] });
+      setPending(null);
       void qc.invalidateQueries({ queryKey: ["messages-last", workspace?.id] });
       void qc.invalidateQueries({ queryKey: ["tasks", workspace?.id] });
     },
-    onError: (e: unknown) => setError(e instanceof Error ? e.message : "تعذّر إرسال الطلب"),
+    onError: (e: unknown) => {
+      setPending(null);
+      setError(e instanceof Error ? e.message : "تعذّر إرسال الطلب");
+    },
+
   });
 
   const skillRun = useMutation({
@@ -134,8 +166,10 @@ function ChatPage() {
     if (!body || !workspace || busy) return;
     setError(null);
     setDraft("");
+    setPending(body);
     send.mutate(body);
   };
+
 
   return (
     <AppShell
@@ -192,7 +226,7 @@ function ChatPage() {
                       : "rounded-ss-lg border border-border bg-card shadow-sm",
                   )}
                 >
-                  {m.role === "user" ? <p dir="auto">{m.body}</p> : <Markdown body={m.body} />}
+                  {m.role === "user" ? <p dir="auto">{m.body}</p> : <Markdown body={prettyBody(m.body)} />}
                   {m.role !== "user" &&
                   id === "nour" &&
                   workspace &&
@@ -212,7 +246,21 @@ function ChatPage() {
               </div>
             ))}
 
+            {pending ? (
+              <div className="flex justify-end gap-3">
+                <div className="min-w-0 max-w-[min(46rem,88%)] rounded-3xl rounded-se-lg bg-foreground px-5 py-3.5 leading-relaxed text-background opacity-80">
+                  <p dir="auto" className="whitespace-pre-wrap">
+                    {pending}
+                  </p>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-[0.7rem] text-background/60">
+                    <Loader2 className="size-3 animate-spin" /> جارٍ الإرسال…
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
             {busy ? (
+
               <div className="flex items-center gap-3 text-sm text-muted-foreground">
                 <span
                   className="grid size-9 shrink-0 place-items-center rounded-xl"
