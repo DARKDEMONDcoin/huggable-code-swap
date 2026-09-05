@@ -56,7 +56,32 @@ function ChatMissing() {
   );
 }
 
+/** بعض الردود القديمة محفوظة كنص JSON خام — نحوّلها لعرض مقروء. */
+function prettyBody(body: string): string {
+  const text = body.trim();
+  if (!text.startsWith("{") && !text.startsWith("[")) return body;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    const items = (Array.isArray(parsed) ? parsed : [parsed]) as Array<{
+      reply?: string;
+      deliverable?: { title?: string; body?: string } | null;
+    }>;
+    const parts = items.flatMap((item) => {
+      if (!item || typeof item !== "object") return [];
+      const chunk: string[] = [];
+      if (typeof item.reply === "string" && item.reply.trim()) chunk.push(item.reply.trim());
+      const d = item.deliverable;
+      if (d?.body) chunk.push(`### ${d.title ?? "المخرج"}\n\n${d.body}`);
+      return chunk;
+    });
+    return parts.length ? parts.join("\n\n") : body;
+  } catch {
+    return body;
+  }
+}
+
 function timeOf(iso: string) {
+
   return new Date(iso).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
 }
 
