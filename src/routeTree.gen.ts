@@ -39,6 +39,8 @@ import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as EmployeesIndexRouteImport } from './routes/employees.index'
 import { Route as EmployeesIdRouteImport } from './routes/employees.$id'
+import { Route as UseCasesIndexRouteImport } from './routes/use-cases.index'
+import { Route as UseCasesIdRouteImport } from './routes/use-cases.$id'
 import { Route as ApiPublicNourAutomationsRouteImport } from './routes/api/public/nour-automations'
 import { Route as ApiPublicNourWeeklyRouteImport } from './routes/api/public/nour-weekly'
 import { Route as ApiPublicPipedreamWebhookRouteImport } from './routes/api/public/pipedream-webhook'
@@ -197,6 +199,16 @@ const EmployeesIdRoute = EmployeesIdRouteImport.update({
   path: '/employees/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const UseCasesIndexRoute = UseCasesIndexRouteImport.update({
+  id: '/use-cases/',
+  path: '/use-cases/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UseCasesIdRoute = UseCasesIdRouteImport.update({
+  id: '/use-cases/$id',
+  path: '/use-cases/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNourAutomationsRoute =
   ApiPublicNourAutomationsRouteImport.update({
     id: '/api/public/nour-automations',
@@ -264,9 +276,11 @@ export interface FileRoutesByFullPath {
   '/app/tasks': typeof AppTasksRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/employees/$id': typeof EmployeesIdRoute
+  '/use-cases/$id': typeof UseCasesIdRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/employees/': typeof EmployeesIndexRoute
+  '/use-cases/': typeof UseCasesIndexRoute
   '/api/public/nour-automations': typeof ApiPublicNourAutomationsRoute
   '/api/public/nour-weekly': typeof ApiPublicNourWeeklyRoute
   '/api/public/pipedream-webhook': typeof ApiPublicPipedreamWebhookRoute
@@ -302,9 +316,11 @@ export interface FileRoutesByTo {
   '/app/tasks': typeof AppTasksRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/employees/$id': typeof EmployeesIdRoute
+  '/use-cases/$id': typeof UseCasesIdRoute
   '/app': typeof AppIndexRoute
   '/blog': typeof BlogIndexRoute
   '/employees': typeof EmployeesIndexRoute
+  '/use-cases': typeof UseCasesIndexRoute
   '/api/public/nour-automations': typeof ApiPublicNourAutomationsRoute
   '/api/public/nour-weekly': typeof ApiPublicNourWeeklyRoute
   '/api/public/pipedream-webhook': typeof ApiPublicPipedreamWebhookRoute
@@ -342,9 +358,11 @@ export interface FileRoutesById {
   '/app/tasks': typeof AppTasksRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/employees/$id': typeof EmployeesIdRoute
+  '/use-cases/$id': typeof UseCasesIdRoute
   '/app/': typeof AppIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/employees/': typeof EmployeesIndexRoute
+  '/use-cases/': typeof UseCasesIndexRoute
   '/api/public/nour-automations': typeof ApiPublicNourAutomationsRoute
   '/api/public/nour-weekly': typeof ApiPublicNourWeeklyRoute
   '/api/public/pipedream-webhook': typeof ApiPublicPipedreamWebhookRoute
@@ -383,9 +401,11 @@ export interface FileRouteTypes {
     | '/app/tasks'
     | '/blog/$slug'
     | '/employees/$id'
+    | '/use-cases/$id'
     | '/app/'
     | '/blog/'
     | '/employees/'
+    | '/use-cases/'
     | '/api/public/nour-automations'
     | '/api/public/nour-weekly'
     | '/api/public/pipedream-webhook'
@@ -421,9 +441,11 @@ export interface FileRouteTypes {
     | '/app/tasks'
     | '/blog/$slug'
     | '/employees/$id'
+    | '/use-cases/$id'
     | '/app'
     | '/blog'
     | '/employees'
+    | '/use-cases'
     | '/api/public/nour-automations'
     | '/api/public/nour-weekly'
     | '/api/public/pipedream-webhook'
@@ -460,9 +482,11 @@ export interface FileRouteTypes {
     | '/app/tasks'
     | '/blog/$slug'
     | '/employees/$id'
+    | '/use-cases/$id'
     | '/app/'
     | '/blog/'
     | '/employees/'
+    | '/use-cases/'
     | '/api/public/nour-automations'
     | '/api/public/nour-weekly'
     | '/api/public/pipedream-webhook'
@@ -490,8 +514,10 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   BlogSlugRoute: typeof BlogSlugRoute
   EmployeesIdRoute: typeof EmployeesIdRoute
+  UseCasesIdRoute: typeof UseCasesIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
   EmployeesIndexRoute: typeof EmployeesIndexRoute
+  UseCasesIndexRoute: typeof UseCasesIndexRoute
   ApiPublicNourAutomationsRoute: typeof ApiPublicNourAutomationsRoute
   ApiPublicNourWeeklyRoute: typeof ApiPublicNourWeeklyRoute
   ApiPublicPipedreamWebhookRoute: typeof ApiPublicPipedreamWebhookRoute
@@ -711,6 +737,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/use-cases/': {
+      id: '/use-cases/'
+      path: '/use-cases'
+      fullPath: '/use-cases/'
+      preLoaderRoute: typeof UseCasesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/use-cases/$id': {
+      id: '/use-cases/$id'
+      path: '/use-cases/$id'
+      fullPath: '/use-cases/$id'
+      preLoaderRoute: typeof UseCasesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/nour-automations': {
       id: '/api/public/nour-automations'
       path: '/api/public/nour-automations'
@@ -815,8 +855,10 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   BlogSlugRoute: BlogSlugRoute,
   EmployeesIdRoute: EmployeesIdRoute,
+  UseCasesIdRoute: UseCasesIdRoute,
   BlogIndexRoute: BlogIndexRoute,
   EmployeesIndexRoute: EmployeesIndexRoute,
+  UseCasesIndexRoute: UseCasesIndexRoute,
   ApiPublicNourAutomationsRoute: ApiPublicNourAutomationsRoute,
   ApiPublicNourWeeklyRoute: ApiPublicNourWeeklyRoute,
   ApiPublicPipedreamWebhookRoute: ApiPublicPipedreamWebhookRoute,
