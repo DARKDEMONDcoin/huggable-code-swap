@@ -12,12 +12,21 @@ import { useIntegrations, useMessages, useWorkspace } from "@/lib/data";
 import { askEmployee, runSkill } from "@/lib/ai.functions";
 import { SkillPalette } from "@/components/app/SkillPalette";
 import { Markdown } from "@/components/app/Markdown";
+import { PublishPanel } from "@/components/app/PublishPanel";
 import { PublishToWordPress } from "@/components/app/PublishToWordPress";
 import { ActionPanel } from "@/components/app/ActionPanel";
 
 
 import { skillsFor, type Skill } from "@/data/skills";
 import { cn } from "@/lib/utils";
+
+/** يقرّر إن كان رد سِراج منشوراً قابلاً للنشر (لا سؤالاً ولا شرحاً قصيراً). */
+function looksPostable(body: string): boolean {
+  const text = body.trim();
+  if (text.length < 80) return false;
+  if (/^[^\n]{0,200}\?\s*$/.test(text)) return false;
+  return /#[^\s#]{2,}/.test(text) || text.length > 220;
+}
 
 export const Route = createFileRoute("/app/chat/$id")({
   loader: ({ params }) => {
@@ -234,6 +243,15 @@ function ChatPage() {
                   m.body.length > 200 ? (
                     <PublishToWordPress workspaceId={workspace.id} body={m.body} />
                   ) : null}
+                  {m.role !== "user" && id === "sonny" && workspace && looksPostable(m.body) ? (
+                    <PublishPanel
+                      workspaceId={workspace.id}
+                      employeeId="sonny"
+                      channel="instagram"
+                      body={m.body}
+                    />
+                  ) : null}
+
                   <p
                     className={cn(
                       "mt-1.5 text-[0.7rem]",
