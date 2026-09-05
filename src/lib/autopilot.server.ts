@@ -227,13 +227,18 @@ export async function runAutopilotRow(
   row: AutopilotRow,
   now: Date = new Date(),
 ): Promise<AutopilotReport> {
-  const hours = (row.hours ?? []).map(Number);
+  const timing: Timing = {
+    slots: (row as { slots?: string[] | null }).slots ?? null,
+    days: (row as { days?: number[] | null }).days ?? null,
+    timezone: (row as { timezone?: string | null }).timezone ?? null,
+    hours: (row.hours ?? []).map(Number),
+  };
   const finish = async (patch: Record<string, unknown>) => {
     await admin
       .from("social_autopilot")
       .update({
         last_run_at: now.toISOString(),
-        next_run_at: nextSlot(hours, now).toISOString(),
+        next_run_at: nextRun(timing, now).toISOString(),
         locked_at: null,
         ...patch,
       })
