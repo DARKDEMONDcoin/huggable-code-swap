@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 import { AppShell } from "@/components/app/AppShell";
+import { Portrait } from "@/components/site/Portrait";
 import { team } from "@/data/team";
 import { useLastMessages, useWorkspace } from "@/lib/data";
 

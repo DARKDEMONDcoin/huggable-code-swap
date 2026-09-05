@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { Portrait } from "@/components/site/Portrait";
 import {
   LayoutDashboard,
   MessagesSquare,
