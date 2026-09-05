@@ -25,7 +25,10 @@ import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
   mode: z.enum(["signup", "signin"]).default("signup").optional(),
+  /** الباقة القادمة من صفحة الأسعار — تُعرض للمستخدم ولا تُلزمه بالدفع الآن. */
+  plan: z.enum(["start", "growth"]).optional(),
 });
+
 
 export const Route = createFileRoute("/auth")({
   validateSearch: searchSchema,
