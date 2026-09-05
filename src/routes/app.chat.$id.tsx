@@ -234,6 +234,15 @@ function ChatPage() {
                   m.body.length > 200 ? (
                     <PublishToWordPress workspaceId={workspace.id} body={m.body} />
                   ) : null}
+                  {m.role !== "user" && id === "sonny" && workspace && looksPostable(m.body) ? (
+                    <PublishPanel
+                      workspaceId={workspace.id}
+                      employeeId="sonny"
+                      channel="instagram"
+                      body={m.body}
+                    />
+                  ) : null}
+
                   <p
                     className={cn(
                       "mt-1.5 text-[0.7rem]",
